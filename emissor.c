@@ -38,15 +38,6 @@ void set_new_termios(struct termios *newtio) {
   */
 }
 
-void set_set_command(struct linkLayer *msg) {
-  msg->frame[0] = FLAG;
-  msg->frame[1] = A_1;
-  msg->frame[2] = SET;
-  msg->frame[3] = get_bcc(A_1, SET);
-  msg->frame[4] = FLAG;
-  msg->size = 5;
-}
-
 int main(int argc, char** argv)
 {
   int fd,c, res;
@@ -90,12 +81,52 @@ int main(int argc, char** argv)
   printf("New termios structure set\n");
   
 
-  struct linkLayer msg;
-  set_set_command(&msg);
-  
-  
+  struct linkLayer SET_command, UA_answer, msg;
+  set_command_SET(&SET_command);
+  set_answer_UA(&UA_answer);
 
-  res = write(fd,msg.frame,msg.size);
+  printf("SET command:\n");
+  for (int i = 0; i < 5; i++) {
+    printf(":%x", SET_command.frame[i]);
+  }
+  printf("\n");
+
+  printf("UA answer:\n");
+  for (int i = 0; i < 5; i++) {
+    printf(":%x", UA_answer.frame[i]);
+  }
+  printf("\n\n\n");
+
+
+  // Send command SET
+  res = write(fd, SET_command.frame, SET_command.size);
+
+  
+  msg.size = 0;
+  int parse = FALSE;
+  while (STOP==FALSE) { /* loop for input */
+    res = read(fd, buf, 1);
+
+    if (buf[0] == FLAG) {
+      parse = !parse;
+      msg.frame[msg.size++] = buf[0];
+      if (parse == FALSE) {
+        STOP=TRUE;
+      }
+    }
+    else if (parse) {
+      msg.frame[msg.size++] = buf[0];
+    }
+  }
+  printf("Frame received:\n");
+  for (int i = 0; i < msg.size; i++) {
+    printf(":%x", msg.frame[i]);
+  }
+  printf("\n");
+
+  if (frame_cmp(&UA_answer, &msg)) {
+    printf("UA answer received\n");
+  }
 
 
   sleep(1);

@@ -93,12 +93,26 @@ int main(int argc, char** argv)
       msg.frame[msg.size++] = buf[0];
     }
   }
+
+  printf("Frame received:\n");
+  for (int i = 0; i < msg.size; i++) {
+    printf(":%x", msg.frame[i]);
+  }
+  printf("\n");
+  
+  struct linkLayer SET_command;
+  set_command_SET(&SET_command);
+
+  if (frame_cmp(&SET_command, &msg)) {
+    printf("SET command received\n");
+
+    struct linkLayer UA_answer;
+    set_answer_UA(&UA_answer);
+    res = write(fd, UA_answer.frame, UA_answer.size);
+  }
   
 
 
-  for (int i = 0; i < msg.size; i++) {
-    printf(":%x\n", buf[i]);
-  }
 
   sleep(1);
   tcsetattr(fd,TCSANOW,&oldtio);
