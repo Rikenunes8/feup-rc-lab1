@@ -141,6 +141,7 @@ int main(int argc, char** argv)
       }
       
     }
+    STOP = FALSE;
     if (error_reading) {
       continue;
     }
