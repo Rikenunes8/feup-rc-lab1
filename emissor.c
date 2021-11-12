@@ -42,9 +42,9 @@ void set_new_termios(struct termios *newtio) {
 int count=0, allgood = FALSE, send=TRUE;
 
 void handle() {
-	printf("Time out # %d\n", count);
+  printf("Time out # %d\n", count);
   send = TRUE;
-	count++;
+  count++;
   printf("end of handle()\n");
 }
 
@@ -108,24 +108,27 @@ int main(int argc, char** argv)
     if (!send) {
       continue;
     }
-
+    printf("before write\n");
     res = write(fd, SET_command.frame, SET_command.size);
     send = FALSE;     // Prepare to not send the frame again until the time out
     alarm(TIME_OUT);  // Set alarm to TIME_OUT seconds
+    siginterrupt(SIGALRM, 1);
+    printf("after set alarm\n");
 
-    
     int error_reading = FALSE;
     char rbuf[1];
     frm.size = 0;
     int parse = FALSE;
 
     while (!STOP) { 
+      printf("enter reading cycle\n");
       if (read(fd, rbuf, 1) == -1) {
         printf("Error reading\n");
         error_reading = TRUE;
         break;
       }
-
+      printf("After reading\n");
+      
       if (rbuf[0] == FLAG) {
         parse = !parse;
         buf[frm.size++] = rbuf[0];
