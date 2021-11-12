@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include "protocol.h"
 
 
@@ -38,8 +39,20 @@ void set_new_termios(struct termios *newtio) {
   */
 }
 
+int count=0, allgood = FALSE, send=TRUE;
+
+void handle() {
+	printf("Time out # %d\n", count);
+  send = TRUE;
+	count++;
+  printf("end of handle()\n");
+}
+
 int main(int argc, char** argv)
 {
+  (void) signal(SIGALRM, handle);  // instala  rotina que atende interrupcao
+
+
   int fd,c, res;
   struct termios oldtio,newtio;
   char buf[255];
@@ -80,52 +93,65 @@ int main(int argc, char** argv)
   }
   printf("New termios structure set\n");
   
-
-  struct linkLayer SET_command, UA_answer, msg;
+  finish_setting_messages();
+  Frame SET_command, UA_answer, frm;
   set_command_SET(&SET_command);
   set_answer_UA(&UA_answer);
 
-  printf("SET command:\n");
-  for (int i = 0; i < 5; i++) {
-    printf(":%x", SET_command.frame[i]);
-  }
-  printf("\n");
+  // Frames checkers
+  print_frame(&SET_command, "SET command");
+  print_frame(&UA_answer, "UA answer");
+  printf("\n\n");
+  // ---------------------
 
-  printf("UA answer:\n");
-  for (int i = 0; i < 5; i++) {
-    printf(":%x", UA_answer.frame[i]);
-  }
-  printf("\n\n\n");
+  while (!allgood && count < MAX_RESENDS) {
+    if (!send) {
+      continue;
+    }
 
+    res = write(fd, SET_command.frame, SET_command.size);
+    send = FALSE;     // Prepare to not send the frame again until the time out
+    alarm(TIME_OUT);  // Set alarm to TIME_OUT seconds
 
-  // Send command SET
-  res = write(fd, SET_command.frame, SET_command.size);
+    
+    int error_reading = FALSE;
+    char rbuf[1];
+    frm.size = 0;
+    int parse = FALSE;
 
-  
-  msg.size = 0;
-  int parse = FALSE;
-  while (STOP==FALSE) { /* loop for input */
-    res = read(fd, buf, 1);
-
-    if (buf[0] == FLAG) {
-      parse = !parse;
-      msg.frame[msg.size++] = buf[0];
-      if (parse == FALSE) {
-        STOP=TRUE;
+    while (!STOP) { 
+      if (read(fd, rbuf, 1) == -1) {
+        printf("Error reading\n");
+        error_reading = TRUE;
+        break;
       }
-    }
-    else if (parse) {
-      msg.frame[msg.size++] = buf[0];
-    }
-  }
-  printf("Frame received:\n");
-  for (int i = 0; i < msg.size; i++) {
-    printf(":%x", msg.frame[i]);
-  }
-  printf("\n");
 
-  if (frame_cmp(&UA_answer, &msg)) {
-    printf("UA answer received\n");
+      if (rbuf[0] == FLAG) {
+        parse = !parse;
+        buf[frm.size++] = rbuf[0];
+        if (!parse) {
+          STOP = TRUE;
+        }
+      }
+      else if (parse) {
+        buf[frm.size++] = rbuf[0];
+      }
+      
+    }
+    if (error_reading) {
+      continue;
+    }
+
+    set_frame_from_buffer(buf, &frm);
+    print_frame(&frm, "Frame received");
+
+    if (frame_cmp(&UA_answer, &frm)) {
+      allgood = TRUE;
+      printf("UA answer received\n");
+    } 
+    else {
+      printf("Wrong answer\n");
+    }
   }
 
 

@@ -76,42 +76,39 @@ int main(int argc, char** argv)
   }
   printf("New termios structure set\n");
 
-  struct linkLayer msg;
-  msg.size = 0;
+  finish_setting_messages();
+
+  Frame SET_command, UA_answer, frm;
+  set_command_SET(&SET_command);
+  set_answer_UA(&UA_answer);
+
+
+  char rbuf[1];
+  frm.size = 0;
   int parse = FALSE;
   while (STOP==FALSE) { /* loop for input */
-    res = read(fd, buf, 1);
+    res = read(fd, rbuf, 1);
 
-    if (buf[0] == FLAG) {
+    if (rbuf[0] == FLAG) {
       parse = !parse;
-      msg.frame[msg.size++] = buf[0];
+      buf[frm.size++] = rbuf[0];
       if (parse == FALSE) {
         STOP=TRUE;
       }
     }
     else if (parse) {
-      msg.frame[msg.size++] = buf[0];
+      buf[frm.size++] = rbuf[0];
     }
   }
+  set_frame_from_buffer(buf, &frm);
 
-  printf("Frame received:\n");
-  for (int i = 0; i < msg.size; i++) {
-    printf(":%x", msg.frame[i]);
-  }
-  printf("\n");
-  
-  struct linkLayer SET_command;
-  set_command_SET(&SET_command);
+  print_frame(&frm, "Frame received");
 
-  if (frame_cmp(&SET_command, &msg)) {
+  if (frame_cmp(&SET_command, &frm)) {
     printf("SET command received\n");
-
-    struct linkLayer UA_answer;
-    set_answer_UA(&UA_answer);
     res = write(fd, UA_answer.frame, UA_answer.size);
   }
   
-
 
 
   sleep(1);
