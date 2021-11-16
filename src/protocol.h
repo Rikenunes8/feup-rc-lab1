@@ -1,15 +1,17 @@
+#pragma once
+
 #include <stdio.h>
 #include <string.h>
 #include "macros.h"
 
-const char get_bcc(char a, char b);
+const char get_BCC_1(char a, char b);
 
 char SET_message[MSG_SIZE] = {FLAG, A_1, SET, 0, FLAG};
 char UA_message[MSG_SIZE] = {FLAG, A_1, UA, 0, FLAG};
 
 void finish_setting_messages() {
-  SET_message[3] = get_bcc(A_1, SET);
-  UA_message[3] = get_bcc(A_1, UA);
+  SET_message[3] = get_BCC_1(A_1, SET);
+  UA_message[3] = get_BCC_1(A_1, UA);
 }
 
 
@@ -27,6 +29,20 @@ typedef struct {
 } Frame;
 
 
+
+char get_BCC_1(char a, char b) {
+  return a ^ b;
+}
+
+char get_BCC_2(char* data, int length) {
+  char bcc2 = data[0];
+
+  for(int i = 1; i < length; i++){
+    bcc2 = bcc2 ^ data[i];
+  }
+  return bcc2;
+}
+
 int frame_cmp(Frame *a, Frame *b) {
   if (a->size != b->size || a->type != b->type)
     return FALSE;
@@ -35,10 +51,6 @@ int frame_cmp(Frame *a, Frame *b) {
       return FALSE;
   }
   return TRUE;
-}
-
-const char get_bcc(char a, char b) {
-  return a ^ b;
 }
 
 void set_buffer_from_frame(char* buf, Frame *frm) {
