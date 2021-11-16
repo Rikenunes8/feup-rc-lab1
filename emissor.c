@@ -93,10 +93,12 @@ int main(int argc, char** argv)
   }
   printf("New termios structure set\n");
   
-  finish_setting_messages();
-  Frame SET_command, UA_answer, frm;
+  Frame SET_command, UA_answer, frame;
   set_command_SET(&SET_command);
   set_answer_UA(&UA_answer);
+  char SET_command_buf[255], UA_answer_buf[255]; 
+  set_buffer_from_frame(SET_command_buf, &SET_command);
+  set_buffer_from_frame(UA_answer_buf, &UA_answer);
 
   // Frames checkers
   print_frame(&SET_command, "SET command");
@@ -109,7 +111,7 @@ int main(int argc, char** argv)
       continue;
     }
     printf("before write\n");
-    res = write(fd, SET_command.frame, SET_command.size);
+    res = write(fd, SET_command_buf, SET_command.size);
     send = FALSE;     // Prepare to not send the frame again until the time out
     alarm(TIME_OUT);  // Set alarm to TIME_OUT seconds
     siginterrupt(SIGALRM, 1);
@@ -117,7 +119,7 @@ int main(int argc, char** argv)
 
     int error_reading = FALSE;
     char rbuf[1];
-    frm.size = 0;
+    frame.size = 0;
     int parse = FALSE;
 
     while (!STOP) { 
@@ -131,13 +133,13 @@ int main(int argc, char** argv)
       
       if (rbuf[0] == FLAG) {
         parse = !parse;
-        buf[frm.size++] = rbuf[0];
+        buf[frame.size++] = rbuf[0];
         if (!parse) {
           STOP = TRUE;
         }
       }
       else if (parse) {
-        buf[frm.size++] = rbuf[0];
+        buf[frame.size++] = rbuf[0];
       }
       
     }
@@ -146,10 +148,10 @@ int main(int argc, char** argv)
       continue;
     }
 
-    set_frame_from_buffer(buf, &frm);
-    print_frame(&frm, "Frame received");
+    set_frame_from_buffer(buf, &frame);
+    print_frame(&frame, "Frame received");
 
-    if (frame_cmp(&UA_answer, &frm)) {
+    if (frame_cmp(&UA_answer, &frame)) {
       allgood = TRUE;
       printf("UA answer received\n");
     } 

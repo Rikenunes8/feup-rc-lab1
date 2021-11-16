@@ -81,6 +81,9 @@ int main(int argc, char** argv)
   Frame SET_command, UA_answer, frm;
   set_command_SET(&SET_command);
   set_answer_UA(&UA_answer);
+  char SET_command_buf[255], UA_answer_buf[255]; 
+  set_buffer_from_frame(SET_command_buf, &SET_command);
+  set_buffer_from_frame(UA_answer_buf, &UA_answer);
 
 
   char rbuf[1];
@@ -106,7 +109,7 @@ int main(int argc, char** argv)
 
   if (frame_cmp(&SET_command, &frm)) {
     printf("SET command received\n");
-    res = write(fd, UA_answer.frame, UA_answer.size);
+    res = write(fd, UA_answer_buf, UA_answer.size);
   }
   
 
