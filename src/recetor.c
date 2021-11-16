@@ -10,12 +10,6 @@
 #include <unistd.h>
 #include "protocol.h"
 
-
-#define BAUDRATE B38400
-#define _POSIX_SOURCE 1 /* POSIX compliant source */
-#define FALSE 0
-#define TRUE 1
-
 volatile int STOP=FALSE;
 
 void set_new_termios(struct termios *newtio) {
@@ -81,6 +75,7 @@ int main(int argc, char** argv)
   Frame SET_command, UA_answer, frm;
   set_command_SET(&SET_command);
   set_answer_UA(&UA_answer);
+  UA_answer.frame[1] = 0x42;
 
 
   char rbuf[1];

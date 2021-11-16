@@ -1,19 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-
-#define FALSE 0
-#define TRUE 1
-#define MAX_SIZE 255
-#define TIME_OUT 3
-#define MAX_RESENDS 3
-#define MSG_SIZE 5
-
-
-#define FLAG    0x7E
-#define A_1     0x03
-#define A_2     0x01
-#define SET     0x03
-#define UA      0x07
+#include "macros.h"
 
 const char get_bcc(char a, char b);
 

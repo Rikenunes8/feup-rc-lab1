@@ -10,14 +10,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include "protocol.h"
+#include "alarm.h"
 
-
-#define BAUDRATE B38400
-#define MODEMDEVICE "/dev/ttyS1"
-#define _POSIX_SOURCE 1 /* POSIX compliant source */
-#define FALSE 0
-#define TRUE 1
-
+int count = 0, allgood = FALSE, send = TRUE;
 volatile int STOP=FALSE;
 
 
@@ -39,19 +34,12 @@ void set_new_termios(struct termios *newtio) {
   */
 }
 
-int count=0, allgood = FALSE, send=TRUE;
 
-void handle() {
-  printf("Time out # %d\n", count);
-  send = TRUE;
-  count++;
-  printf("end of handle()\n");
-}
 
 int main(int argc, char** argv)
 {
-  (void) signal(SIGALRM, handle);  // instala  rotina que atende interrupcao
-
+  //(void) signal(SIGALRM, alarm_handler);  
+  set_alarm(); // instala  rotina que atende interrupcao
 
   int fd,c, res;
   struct termios oldtio,newtio;
@@ -93,6 +81,9 @@ int main(int argc, char** argv)
   }
   printf("New termios structure set\n");
   
+
+
+  
   finish_setting_messages();
   Frame SET_command, UA_answer, frm;
   set_command_SET(&SET_command);
@@ -108,12 +99,9 @@ int main(int argc, char** argv)
     if (!send) {
       continue;
     }
-    printf("before write\n");
     res = write(fd, SET_command.frame, SET_command.size);
     send = FALSE;     // Prepare to not send the frame again until the time out
     alarm(TIME_OUT);  // Set alarm to TIME_OUT seconds
-    siginterrupt(SIGALRM, 1);
-    printf("after set alarm\n");
 
     int error_reading = FALSE;
     char rbuf[1];
@@ -121,13 +109,11 @@ int main(int argc, char** argv)
     int parse = FALSE;
 
     while (!STOP) { 
-      printf("enter reading cycle\n");
       if (read(fd, rbuf, 1) == -1) {
         printf("Error reading\n");
         error_reading = TRUE;
         break;
       }
-      printf("After reading\n");
       
       if (rbuf[0] == FLAG) {
         parse = !parse;
