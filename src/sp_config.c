@@ -10,11 +10,14 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
   struct termios newtio;
 
   int fd = open(file, O_RDWR | O_NOCTTY );
-  if (fd <0) {perror(file); exit(-1); }
+  if (fd < 0) {
+    perror(file);
+    return -1; 
+  }
 
   if ( tcgetattr(fd, oldtio) == -1) { /* save current port settings */
     perror("tcgetattr");
-    exit(1);
+    return -1;
   }
 
   
@@ -37,7 +40,7 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
 
   if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
     perror("tcsetattr");
-    exit(1);
+    return -1;
   }
   printf("New termios structure set\n");
 
@@ -49,7 +52,7 @@ int close_non_canonical(int fd, struct termios* oldtio) {
   
   if (tcsetattr(fd,TCSANOW, oldtio) == -1) {
     perror("tcsetattr");
-    exit(1);
+    return -1;
   }
 
   close(fd);

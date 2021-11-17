@@ -3,9 +3,9 @@
 #include "alarm.h"
 
 void alarm_handler() {
-  printf("Time out # %d\n", count);
-  send = TRUE;
-  count++;
+  printf("Time out # %d\n", n_sends);
+  send_frame = TRUE;
+  n_sends++;
 }
 
 void set_alarm() {
