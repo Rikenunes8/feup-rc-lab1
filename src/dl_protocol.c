@@ -22,26 +22,26 @@ char get_BCC_2(char* data, int length) {
   return bcc2;
 }
 
-/*
+
 int byteStuffing(char* frame, int length) {
-  int fullLength = length + 6;
-  char aux[fullLength];
-  for (int i = 4; i < fullLength; i++) {
+  int fullLen = length + 6; int finalLen = DATA_BEGIN;
+
+  char aux[fullLen];
+
+  for (int i = DATA_BEGIN; i < fullLen; i++) {
     aux[i] = frame[i];
   }
 
-  int finalLen = 4;
-
-  for (int i = 4; i < fullLength-1; i++) {
+  for (int i = DATA_BEGIN; i < fullLen-1; i++) {
     if (aux[i] == FLAG) {
-      frame[finalLen] = 0x7d;
-      frame[finalLen+1] = 0x5e;
+      frame[finalLen] = ESCAPE;
+      frame[finalLen+1] = FLAG_STUFFING;
       finalLen = finalLen + 2;
     }
 
-    else if (aux [i] == 0x7d) {
-      frame[finalLen] = 0x7d;
-      frame[finalLen+1] = 0x5d;
+    else if (aux [i] == ESCAPE) {
+      frame[finalLen] = ESCAPE;
+      frame[finalLen+1] = ESCAPE_STUFFING;
       finalLen = finalLen + 2;
     }
 
@@ -49,9 +49,40 @@ int byteStuffing(char* frame, int length) {
       finalLen++;
     }
   }
+  
   return finalLen;
 }
-*/
+
+
+
+int byteDestuffing(char* frame, int length) {
+  char aux[length + 5]; //bcc2 is included in stuffing
+  int finalLen = DATA_BEGIN; int fullLen = length + 5;
+
+  for (int i = DATA_BEGIN; i < fullLen; i++) {
+    aux[i] = frame[i];
+  }
+
+
+  for (int i = DATA_BEGIN; i < fullLen; i++, finalLen++) {
+    if (aux[i+1] == FLAG_STUFFING) {
+      frame[finalLen] = FLAG;
+      i++;
+    }
+
+    else if(aux[i+1] == ESCAPE_STUFFING) {
+      frame[finalLen] = ESCAPE;
+      i++;
+    }
+
+    else {
+      frame[finalLen] = aux[i];
+    }
+
+  }
+
+  return finalLen;
+}
 
 int create_sv_un_frame(char* frame, char control, int who) {
   int is_command = control == SET || control == DISC;
