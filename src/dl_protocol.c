@@ -22,6 +22,37 @@ char get_BCC_2(char* data, int length) {
   return bcc2;
 }
 
+/*
+int byteStuffing(char* frame, int length) {
+  int fullLength = length + 6;
+  char aux[fullLength];
+  for (int i = 4; i < fullLength; i++) {
+    aux[i] = frame[i];
+  }
+
+  int finalLen = 4;
+
+  for (int i = 4; i < fullLength-1; i++) {
+    if (aux[i] == FLAG) {
+      frame[finalLen] = 0x7d;
+      frame[finalLen+1] = 0x5e;
+      finalLen = finalLen + 2;
+    }
+
+    else if (aux [i] == 0x7d) {
+      frame[finalLen] = 0x7d;
+      frame[finalLen+1] = 0x5d;
+      finalLen = finalLen + 2;
+    }
+
+    else {
+      finalLen++;
+    }
+  }
+  return finalLen;
+}
+*/
+
 int create_sv_un_frame(char* frame, char control, int who) {
   int is_command = control == SET || control == DISC;
   int is_answer = control == UA || control == RR_0 || control == RR_1 || control == REJ_0 || control == REJ_1;
