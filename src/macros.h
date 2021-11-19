@@ -19,7 +19,13 @@
 #define SV_UN_SIZE 5
 
 #define TIME_OUT 3
-#define MAX_RESENDS 3
+#define MAX_RESENDS 3 
+
+#define DATA_BEGIN 4
+
+#define ESCAPE  0x7D
+#define FLAG_STUFFING 0x5E
+#define ESCAPE_STUFFING 0x5D
 
 
 #define FLAG    0x7E
