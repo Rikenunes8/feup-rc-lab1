@@ -22,7 +22,7 @@ char get_BCC_2(char* data, int length) {
   return bcc2;
 }
 
-
+/*
 int byteStuffing(char* frame, int length) {
   int fullLen = length + 6; int finalLen = DATA_BEGIN;
 
@@ -49,12 +49,12 @@ int byteStuffing(char* frame, int length) {
       finalLen++;
     }
   }
-  
+
   return finalLen;
-}
+}*/
 
 
-
+/*
 int byteDestuffing(char* frame, int length) {
   char aux[length + 5]; //bcc2 is included in stuffing
   int finalLen = DATA_BEGIN; int fullLen = length + 5;
@@ -82,7 +82,7 @@ int byteDestuffing(char* frame, int length) {
   }
 
   return finalLen;
-}
+} */
 
 int create_sv_un_frame(char* frame, char control, int who) {
   int is_command = control == SET || control == DISC;
