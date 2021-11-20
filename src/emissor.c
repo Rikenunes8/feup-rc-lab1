@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   int fd = llopen(argv[1], TRANSMITTER);
   
   printf("Ending connection\n");
-  int ret = llclose(fd);
+  int ret = llclose(fd, TRANSMITTER);
 
   printf("Closing\n");
   return ret;
