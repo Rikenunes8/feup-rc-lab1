@@ -166,6 +166,43 @@ int ll_open_transmitter(int fd) {
   return fd;
 }
 
+int ll_close_transmitter(int fd) {
+  char buffer[MAX_SIZE];
+  
+  if (create_sv_un_frame(buffer, DISC, TRANSMITTER) < 0) {
+    return -1;
+  }
+
+  finish = FALSE;
+  send_frame = TRUE;
+  n_sends = 0;
+
+  int read_value;
+  while (!finish) {
+    if (send_frame) {
+      write_frame(fd, buffer, SV_UN_SIZE);
+      printf("DISC frame sent\n");
+
+      alarm(TIME_OUT);
+      send_frame = FALSE;
+    }
+    read_value = read_sv_un_frame(fd, A_1, DISC);
+
+
+    
+    if (read_value >= 0) {
+      create_sv_un_frame(buffer, UA, TRANSMITTER); //check if this is ok pls 
+      write_frame(fd , buffer, SV_UN_SIZE);
+      alarm(0);
+      finish = TRUE; 
+    }
+    else if (n_sends >= MAX_RESENDS) {
+      printf("Limit of resends\n");
+      finish = TRUE;
+    }
+  }
+}
+
 int ll_open_receiver(int fd) {
   int res = read_sv_un_frame(fd, A_1, SET);
   printf("SET frame received\n");
@@ -177,6 +214,21 @@ int ll_open_receiver(int fd) {
 
   write_frame(fd, buffer, SV_UN_SIZE);
   printf("UA frame sent\n");
+
+  return 0;
+}
+
+int ll_close_receiver(int fd) {
+  int res = read_sv_un_frame(fd, A_1, DISC);
+  printf("DISC frame received\n");
+
+  char buffer[MAX_SIZE];
+  create_sv_un_frame(buffer, DISC, RECEIVER);
+
+  write_frame(fd, buffer, SV_UN_SIZE);  //sent DISC
+
+  res = read_sv_un_frame(fd, A_1, UA);
+  printf("UA frame received\n");
 
   return 0;
 }
