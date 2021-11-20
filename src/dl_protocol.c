@@ -264,6 +264,34 @@ int llopen(char* port, int who) {
   return -1;
 }
 
+int llclose(int fd, int who) {
+  if (fd < 0) {
+    return -1;
+  }
+
+  if (who == TRANSMITTER) {
+    int ok = ll_close_transmitter(fd);
+    if (ok < 0) {
+      close_non_canonical(fd, &oldtio);
+      return -1;
+    }
+    
+    else return fd;
+  }
+
+  else if (who == RECEIVER) {
+    int ok = ll_close_receiver(fd);
+    if (ok < 0) {
+      close_non_canonical(fd, &oldtio);
+      return -1;
+    }
+
+    else return fd;
+  }
+
+  return -1;
+}
+
 int llwrite(int fd, char* buffer, int length) {
   return 0;
 }
@@ -272,10 +300,3 @@ int llread(int fd, char* buffer) {
   return 0;
 }
 
-int llclose(int fd) {
-  if (fd < 0) {
-    return -1;
-  }
-  close_non_canonical(fd, &oldtio);
-  return 0;
-}
