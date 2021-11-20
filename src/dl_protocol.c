@@ -7,94 +7,23 @@
 #include "sp_config.h"
 #include "alarm.h"
 #include "state_machine.h"
+#include "aux.h"
 
 
-char get_BCC_1(char a, char b) {
-  return a ^ b;
-}
-
-char get_BCC_2(char* data, int length) {
-  char bcc2 = data[0];
-
-  for(int i = 1; i < length; i++){
-    bcc2 = bcc2 ^ data[i];
-  }
-  return bcc2;
-}
-
-/*
-int byteStuffing(char* frame, int length) {
-  int fullLen = length + 6; int finalLen = DATA_BEGIN;
-
-  char aux[fullLen];
-
-  for (int i = DATA_BEGIN; i < fullLen; i++) {
-    aux[i] = frame[i];
-  }
-
-  for (int i = DATA_BEGIN; i < fullLen-1; i++) {
-    if (aux[i] == FLAG) {
-      frame[finalLen] = ESCAPE;
-      frame[finalLen+1] = FLAG_STUFFING;
-      finalLen = finalLen + 2;
-    }
-
-    else if (aux [i] == ESCAPE) {
-      frame[finalLen] = ESCAPE;
-      frame[finalLen+1] = ESCAPE_STUFFING;
-      finalLen = finalLen + 2;
-    }
-
-    else {
-      finalLen++;
-    }
-  }
-
-  return finalLen;
-}*/
 
 
-/*
-int byteDestuffing(char* frame, int length) {
-  char aux[length + 5]; //bcc2 is included in stuffing
-  int finalLen = DATA_BEGIN; int fullLen = length + 5;
-
-  for (int i = DATA_BEGIN; i < fullLen; i++) {
-    aux[i] = frame[i];
-  }
-
-
-  for (int i = DATA_BEGIN; i < fullLen; i++, finalLen++) {
-    if (aux[i+1] == FLAG_STUFFING) {
-      frame[finalLen] = FLAG;
-      i++;
-    }
-
-    else if(aux[i+1] == ESCAPE_STUFFING) {
-      frame[finalLen] = ESCAPE;
-      i++;
-    }
-
-    else {
-      frame[finalLen] = aux[i];
-    }
-
-  }
-
-  return finalLen;
-} */
-
-int create_sv_un_frame(char* frame, char control, int who) {
+int create_sv_un_frame(uchar* frame, uchar control, int who) {
   int is_command = control == SET || control == DISC;
   int is_answer = control == UA || control == RR_0 || control == RR_1 || control == REJ_0 || control == REJ_1;
-  
+
   frame[0] = FLAG;
   if ((is_command && who == TRANSMITTER) || (is_answer && who == RECEIVER))
     frame[1] = A_1;
   else if ((is_command && who == RECEIVER) || (is_answer && who == TRANSMITTER))
     frame[1] = A_2;
-  else
+  else {
     return -1;
+  }
   frame[2] = control;
   frame[3] = get_BCC_1(frame[1], frame[2]);
   frame[4] = FLAG;
@@ -102,24 +31,56 @@ int create_sv_un_frame(char* frame, char control, int who) {
   return 0;
 }
 
-int read_sv_un_frame(int fd, char address, char control) {
-  char bcc1 = get_BCC_1(address, control);
-  State_machine* sm = create_sm(address, control, bcc1);
-  char byte;
+int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length) {
+  frame[0] = FLAG;
+  frame[1] = A_1;
+  frame[2] = control;
+  frame[3] = get_BCC_1(frame[1], frame[2]);
+  for (int i = 0; i < data_length; i++) {
+    frame[4+i] = data[i];
+  }
+  frame[4+data_length] = get_BCC_2(data, data_length);
+  frame[4+data_length+1] = FLAG;
+
+  return 4+data_length+2;
+}
+
+int read_sv_un_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame) {
+  State_machine* sm = create_sm(address, controls, n_controls);
+  uchar byte;
   while (sm->state != STOP && !finish && !send_frame) {
     if (read(fd, &byte, sizeof(char)) > 0) {
-      event_handler_sm(sm, byte);
+      event_handler_sm(sm, byte, frame, SUPERVISION);
     }
   }
+  int control_chosen = sm->control_chosen;
   destroy_sm(sm);
 
   if (finish || send_frame)
     return -1;
   else
-    return SV_UN_SIZE;
+    return control_chosen;
 }
 
-int write_frame(int fd, char* frame, unsigned size) {
+int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame) {
+  uchar control;
+
+  State_machine* sm = create_sm(address, controls, n_controls);
+
+  uchar byte;
+  while (sm->state != STOP ) {
+    if (read(fd, &byte, sizeof(char)) > 0) {
+      event_handler_sm(sm, byte, frame, INFORMATION);
+    }
+  }
+  
+  int frame_size = sm->frame_size;
+  destroy_sm(sm);
+
+  return frame_size;
+}
+
+int write_frame(int fd, uchar* frame, unsigned size) {
   return write(fd, frame, size);
 }
 
@@ -127,9 +88,12 @@ int write_frame(int fd, char* frame, unsigned size) {
 
 
 int ll_open_transmitter(int fd) {
-  char buffer[MAX_SIZE];
+  uchar frame_to_send[MAX_SIZE];
+  uchar frame_to_receive[MAX_SIZE];
+  uchar controls[] = {UA};
+  const int N_CONTROLS = 1;
   
-  if (create_sv_un_frame(buffer, SET, TRANSMITTER) < 0) {
+  if (create_sv_un_frame(frame_to_send, SET, TRANSMITTER) < 0) {
     return -1;
   }
 
@@ -140,13 +104,13 @@ int ll_open_transmitter(int fd) {
   int read_value;
   while (!finish) {
     if (send_frame) {
-      write_frame(fd, buffer, SV_UN_SIZE);
+      write_frame(fd, frame_to_send, SV_UN_SIZE);
       printf("SET frame sent\n");
 
       alarm(TIME_OUT);
       send_frame = FALSE;
     }
-    read_value = read_sv_un_frame(fd, A_1, UA);
+    read_value = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
     
     if (read_value >= 0) {
       alarm(0);
@@ -167,15 +131,18 @@ int ll_open_transmitter(int fd) {
 }
 
 int ll_open_receiver(int fd) {
-  int res = read_sv_un_frame(fd, A_1, SET);
+  uchar frame_to_receive[MAX_SIZE];
+  uchar controls[] = {SET};
+  const unsigned int N_CONTROLS = 1;
+  int res = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
   printf("SET frame received\n");
 
 
-  char buffer[MAX_SIZE];
-  create_sv_un_frame(buffer, UA, RECEIVER);
-  // create_sv_un_frame(buffer, SET, RECEIVER); // Test failed answer
+  uchar frame_to_send[MAX_SIZE];
+  create_sv_un_frame(frame_to_send, UA, RECEIVER);
+  // create_sv_un_frame(frame_to_send, SET, RECEIVER); // Test failed answer
 
-  write_frame(fd, buffer, SV_UN_SIZE);
+  write_frame(fd, frame_to_send, SV_UN_SIZE);
   printf("UA frame sent\n");
 
   return 0;
@@ -188,6 +155,9 @@ int llopen(char* port, int who) {
     return -1;
   }
   set_alarm();
+
+  sequence_number = 0;
+
 
   if (who == TRANSMITTER) {
     int ok = ll_open_transmitter(fd);
@@ -212,12 +182,116 @@ int llopen(char* port, int who) {
   return -1;
 }
 
-int llwrite(int fd, char* buffer, int length) {
+int llwrite(int fd, uchar* data, int length) {
+  uchar frame_to_send[MAX_SIZE];
+  uchar frame_to_receive[MAX_SIZE];
+  //int len_stuffed = byteStuffing(data, length);
+  const int N_CONTROLS = 2;
+  uchar controls[N_CONTROLS];
+
+  uchar control_to_send;
+
+  if (sequence_number == 0) {
+    control_to_send = S_0;
+    controls[0] = RR_1;
+    controls[1] = REJ_0;
+  }
+  else if (sequence_number == 1) {
+    control_to_send = S_1;
+    controls[0] = RR_0;
+    controls[1] = REJ_1;
+  }
+  else {
+    return -1;
+  }
+  int frame_size = create_info_frame(frame_to_send, control_to_send, data, length);
+
+  
+  finish = FALSE;
+  send_frame = TRUE;
+  n_sends = 0;
+
+  int read_value;
+  while (!finish) {
+    if (send_frame) {
+      //write_frame(fd, buffer, len_stuffed);
+      write_frame(fd, frame_to_send, frame_size);
+      printf("INFORMATION Ns%d frame sent\n", sequence_number);
+
+      alarm(TIME_OUT);
+      send_frame = FALSE;
+    }
+
+    read_value = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+
+    if (read_value >= 0) {
+      alarm(0);
+      finish = TRUE; 
+    }
+    else if (n_sends >= MAX_RESENDS) {
+      printf("Limit of resends\n");
+      finish = TRUE;
+    }
+  }
+
+  if (read_value < 0) {
+    return -1;
+  }
+  else if (read_value == 0) {
+    sequence_number = (sequence_number+1)%2;
+    printf("RR_%d frame received\n", sequence_number);
+  }
+  else {
+    printf("REJ_%d frame received\n", sequence_number);
+  }
+  
   return 0;
 }
 
-int llread(int fd, char* buffer) {
-  return 0;
+int llread(int fd, uchar* buffer) {
+  uchar frame_to_send[MAX_SIZE];
+  uchar frame_to_receive[MAX_SIZE];
+  
+  uchar controls[] = {S_0, S_1};
+  const int N_CONTROLS = 1;
+  int frame_size = read_info_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+  
+  uchar control_used;
+  if      (frame_to_receive[CNTRL_BYTE] == S_0) control_used = 0;
+  else if (frame_to_receive[CNTRL_BYTE] == S_1) control_used = 1;
+  else return -1;
+
+  printf("INFORMATION Ns%d frame received\n", control_used);
+  
+  uchar controls_to_send[] = {RR_0, RR_1, REJ_0, REJ_1};
+  
+  uchar i_control;
+  if (control_used == sequence_number) { // new frame
+    if (frame_to_receive[frame_size-2] == get_BCC_2(frame_to_receive+DATA_BEGIN, frame_size-6)) { // bcc2 is correct
+      for (int i = 0; i < frame_size - 6; i++) {
+        buffer[i] = frame_to_receive[DATA_BEGIN + i];
+      }
+
+      i_control = (control_used+1)%2;
+      sequence_number = i_control;
+    }
+    else {
+      i_control = 2+control_used;
+      sequence_number = control_used;
+    }
+  }
+  else { // same frame -> discard
+    i_control = (control_used+1)%2;
+    sequence_number = i_control;
+  }
+  create_sv_un_frame(frame_to_send, controls_to_send[i_control], RECEIVER);
+
+  write_frame(fd, frame_to_send, SV_UN_SIZE);
+  
+  char* text[] = {"RR_0", "RR_1", "REJ_0", "REJ_1"};
+  printf("%s frame sent\n", text[i_control]);
+
+  return frame_size-6;
 }
 
 int llclose(int fd) {

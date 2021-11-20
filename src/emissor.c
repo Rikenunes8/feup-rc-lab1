@@ -27,6 +27,10 @@ int main(int argc, char** argv) {
   
   printf("Establishing connection\n");
   int fd = llopen(argv[1], TRANSMITTER);
+
+  printf("Transfering data\n");
+  char buffer[] = {0x02, 0x03, 0x04, 0x05};
+  llwrite(fd, buffer, 4);
   
   printf("Ending connection\n");
   int ret = llclose(fd);

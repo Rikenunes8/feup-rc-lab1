@@ -16,21 +16,23 @@ typedef struct {
 
 
 struct termios oldtio;
+unsigned sequence_number;
+
+int create_sv_un_frame(uchar* frame, uchar control, int who);
+int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length);
+int read_sv_un_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
+int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
+int write_frame(int fd, uchar* frame, unsigned size);
 
 
-// -------- AUXILIAR FUNCTIONS -----------
-char get_BCC_1(char a, char b);
+int ll_open_transmitter(int fd);
 
-char get_BCC_2(char* data, int length);
-
-// --------------------------------------------
-
-
+int ll_open_receiver(int fd);
 
 int llopen(char* port, int who);
 
-int llwrite(int fd, char* buffer, int length);
+int llwrite(int fd, uchar* buffer, int length);
 
-int llread(int fd, char* buffer);
+int llread(int fd, uchar* buffer);
 
 int llclose(int fd);

@@ -10,9 +10,9 @@
 #define TRANSMITTER 0
 #define RECEIVER    1
 
-#define _INFORMATION 0
-#define _SUPERVISION 1
-#define _UNNUMBERED  2
+#define INFORMATION 0
+#define SUPERVISION 1
+#define UNNUMBERED  2
 
 
 #define MAX_SIZE 255
@@ -21,6 +21,9 @@
 #define TIME_OUT 3
 #define MAX_RESENDS 3 
 
+#define ADDRS_BYTE 1
+#define CNTRL_BYTE 2
+#define BCC1_BYTE  3 
 #define DATA_BEGIN 4
 
 #define ESCAPE  0x7D
@@ -41,3 +44,5 @@
 
 #define S_0     0x00
 #define S_1     0x40
+
+typedef unsigned char uchar;
