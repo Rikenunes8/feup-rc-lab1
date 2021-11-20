@@ -35,4 +35,4 @@ int llwrite(int fd, uchar* buffer, int length);
 
 int llread(int fd, uchar* buffer);
 
-int llclose(int fd);
+int llclose(int fd, int who);

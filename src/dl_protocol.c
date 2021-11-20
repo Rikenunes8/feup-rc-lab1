@@ -244,8 +244,6 @@ int llwrite(int fd, uchar* data, int length) {
   else {
     printf("REJ_%d frame received\n", sequence_number);
   }
-  
-  return 0;
 }
 
 int llread(int fd, uchar* buffer) {
@@ -294,10 +292,93 @@ int llread(int fd, uchar* buffer) {
   return frame_size-6;
 }
 
-int llclose(int fd) {
+int ll_close_transmitter(int fd) {
+  uchar frame_to_send[MAX_SIZE];
+  uchar frame_to_receive[MAX_SIZE];
+  uchar controls[] = {DISC};
+  const int N_CONTROLS = 1;
+  
+  if (create_sv_un_frame(frame_to_send, DISC, TRANSMITTER) < 0) {
+    return -1;
+  }
+
+  finish = FALSE;
+  send_frame = TRUE;
+  n_sends = 0;
+
+  int read_value;
+  while (!finish) {
+    if (send_frame) {
+      write_frame(fd, frame_to_send, SV_UN_SIZE);
+      printf("DISC frame sent\n");
+
+      alarm(TIME_OUT);
+      send_frame = FALSE;
+    }
+    read_value = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+
+
+    
+    if (read_value >= 0) {
+      create_sv_un_frame(frame_to_send, UA, TRANSMITTER); //check if this is ok pls 
+      write_frame(fd , frame_to_send, SV_UN_SIZE);
+      printf("UA frame sent\n");
+
+      alarm(0);
+      finish = TRUE; 
+    }
+    else if (n_sends >= MAX_RESENDS) {
+      printf("Limit of resends\n");
+      finish = TRUE;
+    }
+  }
+}
+
+int ll_close_receiver(int fd) {
+  uchar frame_to_receive[MAX_SIZE];
+  uchar controls[] = {SET};
+  const unsigned int N_CONTROLS = 1;
+  int res = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+  printf("DISC frame received\n");
+
+  char frame_to_send[MAX_SIZE];
+  create_sv_un_frame(frame_to_send, DISC, RECEIVER);
+
+  write_frame(fd, frame_to_send, SV_UN_SIZE);  //sent DISC
+  printf("DISC frame sent\n");
+
+  controls[0] = UA;
+  res = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+  printf("UA frame received\n");
+
+  return 0;
+}
+
+int llclose(int fd, int who) {
   if (fd < 0) {
     return -1;
   }
-  close_non_canonical(fd, &oldtio);
-  return 0;
+
+  if (who == TRANSMITTER) {
+    int ok = ll_close_transmitter(fd);
+    if (ok < 0) {
+      close_non_canonical(fd, &oldtio);
+      return -1;
+    }
+    
+    else return fd;
+  }
+
+  else if (who == RECEIVER) {
+    int ok = ll_close_receiver(fd);
+    if (ok < 0) {
+      close_non_canonical(fd, &oldtio);
+      return -1;
+    }
+
+    else return fd;
+  }
+
+  return -1;
 }
+
