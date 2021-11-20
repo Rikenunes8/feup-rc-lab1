@@ -332,6 +332,7 @@ int ll_close_transmitter(int fd) {
       finish = TRUE;
     }
   }
+  return 0;
 }
 
 int ll_close_receiver(int fd) {
@@ -360,25 +361,13 @@ int llclose(int fd, int who) {
   }
 
   if (who == TRANSMITTER) {
-    int ok = ll_close_transmitter(fd);
-    if (ok < 0) {
-      close_non_canonical(fd, &oldtio);
-      return -1;
-    }
-    
-    else return fd;
+    ll_close_transmitter(fd);
   }
-
   else if (who == RECEIVER) {
-    int ok = ll_close_receiver(fd);
-    if (ok < 0) {
-      close_non_canonical(fd, &oldtio);
-      return -1;
-    }
-
-    else return fd;
+    ll_close_receiver(fd);
   }
 
-  return -1;
+  close_non_canonical(fd, &oldtio);
+  return 0;
 }
 
