@@ -315,7 +315,7 @@ int ll_close_transmitter(int fd) {
       alarm(TIME_OUT);
       send_frame = FALSE;
     }
-    read_value = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+    read_value = read_sv_un_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
 
 
     
@@ -336,7 +336,7 @@ int ll_close_transmitter(int fd) {
 
 int ll_close_receiver(int fd) {
   uchar frame_to_receive[MAX_SIZE];
-  uchar controls[] = {SET};
+  uchar controls[] = {DISC};
   const unsigned int N_CONTROLS = 1;
   int res = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
   printf("DISC frame received\n");
@@ -348,7 +348,7 @@ int ll_close_receiver(int fd) {
   printf("DISC frame sent\n");
 
   controls[0] = UA;
-  res = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+  res = read_sv_un_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
   printf("UA frame received\n");
 
   return 0;

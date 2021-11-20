@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   printf("\n");
 
   printf("Ending connection\n");
-  int ret = llclose(fd);
+  int ret = llclose(fd, RECEIVER);
 
   printf("Closing\n");
   return ret;
