@@ -22,5 +22,15 @@ typedef struct {
 
 State_machine* create_sm(uchar address, uchar* controls, int n_controls);
 void destroy_sm();
-void event_handler_sm(State_machine* sm, uchar byte, uchar* frame, int frame_type);
 int get_control(State_machine* sm, uchar byte);
+void event_handler_sm(State_machine* sm, uchar byte, uchar* frame, int frame_type);
+
+void process_start(State_machine* sm, uchar byte, int* i, uchar* frame);
+void process_flag_rcv(State_machine* sm, uchar byte, int* i, uchar* frame);
+void process_a_rcv(State_machine* sm, uchar byte, int* i, uchar* frame);
+void process_c_rcv(State_machine* sm, uchar byte, int* i, uchar* frame);
+void process_bcc_ok(State_machine* sm, uchar byte, int* i, uchar* frame, int frame_type);
+
+
+
+

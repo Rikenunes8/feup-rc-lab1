@@ -14,6 +14,11 @@ extern int finish;
 extern int send_frame;
 extern int n_sends;
 
+static struct termios oldtio;
+static unsigned sequence_number;
+
+
+
 int create_su_frame(uchar* frame, uchar control, int who) {
   int is_command = control == SET || control == DISC;
   int is_answer = control == UA || control == RR_0 || control == RR_1 || control == REJ_0 || control == REJ_1;

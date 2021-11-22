@@ -28,78 +28,94 @@ int get_control(State_machine* sm, uchar byte) {
 
 void event_handler_sm(State_machine* sm, uchar byte, uchar* frame, int frame_type) {
   static int i = 0;
-  int n;
 
   switch (sm->state) {
     case START:
-      i = 0;
-      if (byte == FLAG) {
-        sm->state = FLAG_RCV;
-        frame[i++] = byte;
-      }
+      process_start(sm, byte, &i, frame);
       break;
     case FLAG_RCV:
-      if (byte == FLAG) {
-        i = 0;
-        frame[i++] = byte;
-      }
-      else if (byte == sm->address) {
-        sm->state = A_RCV;
-        frame[i++] = byte;
-      }
-      else {
-        sm->state = START;
-        i = 0;
-      }
+      process_flag_rcv(sm, byte, &i, frame);
       break;
     case A_RCV:
-      if (byte == FLAG) {
-        sm->state = FLAG_RCV;
-        i = 0;
-        frame[i++] = byte;      
-      }
-      else if ((n = get_control(sm, byte)) != -1) {
-        sm->state = C_RCV;
-        sm->control_chosen = n;
-        frame[i++] = byte;
-      }
-      else {
-        sm->state = START;
-        i = 0;
-      }
+      process_a_rcv(sm, byte, &i, frame);
       break;
     case C_RCV:
-      if (byte == FLAG) {
-        sm->state = FLAG_RCV;
-        i = 0;
-        frame[i++] = byte;   
-      }
-      else if (byte == get_BCC_1(frame[ADDRS_BYTE], frame[CNTRL_BYTE])) {
-        sm->state = BCC_OK;
-        frame[i++] = byte;   
-      }
-      else {
-        sm->state = START;
-        i = 0;
-      }
+      process_c_rcv(sm, byte, &i, frame);
       break;
     case BCC_OK:
-      if (byte == FLAG) {
-        sm->state = STOP;
-        frame[i++] = byte;
-        sm->frame_size = i;
-      }
-      else {
-        if (frame_type != INFORMATION) {
-          sm->state = START;
-        }
-        else {
-          frame[i++] = byte;
-        }
-      }
+      process_bcc_ok(sm, byte, &i, frame, frame_type);
       break;
     default:
       break;
   }
 }
 
+void process_start(State_machine* sm, uchar byte, int* i, uchar* frame) {
+  (*i) = 0;
+  if (byte == FLAG) {
+    sm->state = FLAG_RCV;
+    frame[(*i)++] = byte;
+  }
+}
+
+void process_flag_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
+  if (byte == FLAG) {
+    (*i) = 0;
+    frame[(*i)++] = byte;
+  }
+  else if (byte == sm->address) {
+    sm->state = A_RCV;
+    frame[(*i)++] = byte;
+  }
+  else {
+    sm->state = START;
+  }
+}
+
+void process_a_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
+  int n;
+  if (byte == FLAG) {
+    sm->state = FLAG_RCV;
+    *i = 0;
+    frame[(*i)++] = byte;      
+  }
+  else if ((n = get_control(sm, byte)) != -1) {
+    sm->state = C_RCV;
+    sm->control_chosen = n;
+    frame[(*i)++] = byte;
+  }
+  else {
+    sm->state = START;
+  }
+}
+
+void process_c_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
+  if (byte == FLAG) {
+    sm->state = FLAG_RCV;
+    *i = 0;
+    frame[(*i)++] = byte;   
+  }
+  else if (byte == get_BCC_1(frame[ADDRS_BYTE], frame[CNTRL_BYTE])) {
+    sm->state = BCC_OK;
+    frame[(*i)++] = byte;   
+  }
+  else {
+    sm->state = START;
+  }
+}
+
+void process_bcc_ok(State_machine* sm, uchar byte, int* i, uchar* frame, int frame_type) {
+  if (byte == FLAG) {
+    sm->state = STOP;
+    frame[(*i)++] = byte;
+    sm->frame_size = *i;
+  }
+  else {
+    if (frame_type != INFORMATION) {
+      sm->state = START;
+    }
+    else {
+      frame[(*i)++] = byte;
+    }
+  }
+}
