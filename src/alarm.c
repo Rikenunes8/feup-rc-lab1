@@ -2,6 +2,9 @@
 #include <signal.h>
 #include "alarm.h"
 
+int n_sends, finish, send_frame;
+
+
 void alarm_handler() {
   printf("Time out # %d\n", n_sends);
   send_frame = TRUE;

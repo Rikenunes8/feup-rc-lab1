@@ -10,9 +10,11 @@
 #include "aux.h"
 
 
+extern int finish;
+extern int send_frame;
+extern int n_sends;
 
-
-int create_sv_un_frame(uchar* frame, uchar control, int who) {
+int create_su_frame(uchar* frame, uchar control, int who) {
   int is_command = control == SET || control == DISC;
   int is_answer = control == UA || control == RR_0 || control == RR_1 || control == REJ_0 || control == REJ_1;
 
@@ -45,7 +47,7 @@ int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length)
   return 4+data_length+2;
 }
 
-int read_sv_un_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame) {
+int read_su_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame) {
   State_machine* sm = create_sm(address, controls, n_controls);
   uchar byte;
   while (sm->state != STOP && !finish && !send_frame) {
@@ -93,7 +95,7 @@ int ll_open_transmitter(int fd) {
   uchar controls[] = {UA};
   const int N_CONTROLS = 1;
   
-  if (create_sv_un_frame(frame_to_send, SET, TRANSMITTER) < 0) {
+  if (create_su_frame(frame_to_send, SET, TRANSMITTER) < 0) {
     return -1;
   }
 
@@ -104,13 +106,13 @@ int ll_open_transmitter(int fd) {
   int read_value;
   while (!finish) {
     if (send_frame) {
-      write_frame(fd, frame_to_send, SV_UN_SIZE);
+      write_frame(fd, frame_to_send, SU_SIZE);
       printf("SET frame sent\n");
 
       alarm(TIME_OUT);
       send_frame = FALSE;
     }
-    read_value = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+    read_value = read_su_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
     
     if (read_value >= 0) {
       alarm(0);
@@ -134,15 +136,15 @@ int ll_open_receiver(int fd) {
   uchar frame_to_receive[MAX_SIZE];
   uchar controls[] = {SET};
   const unsigned int N_CONTROLS = 1;
-  int res = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+  int res = read_su_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
   printf("SET frame received\n");
 
 
   uchar frame_to_send[MAX_SIZE];
-  create_sv_un_frame(frame_to_send, UA, RECEIVER);
-  // create_sv_un_frame(frame_to_send, SET, RECEIVER); // Test failed answer
+  create_su_frame(frame_to_send, UA, RECEIVER);
+  // create_su_frame(frame_to_send, SET, RECEIVER); // Test failed answer
 
-  write_frame(fd, frame_to_send, SV_UN_SIZE);
+  write_frame(fd, frame_to_send, SU_SIZE);
   printf("UA frame sent\n");
 
   return 0;
@@ -222,7 +224,7 @@ int llwrite(int fd, uchar* data, int length) {
       send_frame = FALSE;
     }
 
-    read_value = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+    read_value = read_su_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
 
     if (read_value >= 0) {
       alarm(0);
@@ -282,9 +284,9 @@ int llread(int fd, uchar* buffer) {
     i_control = (control_used+1)%2;
     sequence_number = i_control;
   }
-  create_sv_un_frame(frame_to_send, controls_to_send[i_control], RECEIVER);
+  create_su_frame(frame_to_send, controls_to_send[i_control], RECEIVER);
 
-  write_frame(fd, frame_to_send, SV_UN_SIZE);
+  write_frame(fd, frame_to_send, SU_SIZE);
   
   char* text[] = {"RR_0", "RR_1", "REJ_0", "REJ_1"};
   printf("%s frame sent\n", text[i_control]);
@@ -298,7 +300,7 @@ int ll_close_transmitter(int fd) {
   uchar controls[] = {DISC};
   const int N_CONTROLS = 1;
   
-  if (create_sv_un_frame(frame_to_send, DISC, TRANSMITTER) < 0) {
+  if (create_su_frame(frame_to_send, DISC, TRANSMITTER) < 0) {
     return -1;
   }
 
@@ -309,19 +311,21 @@ int ll_close_transmitter(int fd) {
   int read_value;
   while (!finish) {
     if (send_frame) {
-      write_frame(fd, frame_to_send, SV_UN_SIZE);
+      write_frame(fd, frame_to_send, SU_SIZE);
       printf("DISC frame sent\n");
 
       alarm(TIME_OUT);
       send_frame = FALSE;
     }
-    read_value = read_sv_un_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
+    read_value = read_su_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
 
 
     
     if (read_value >= 0) {
-      create_sv_un_frame(frame_to_send, UA, TRANSMITTER); //check if this is ok pls 
-      write_frame(fd , frame_to_send, SV_UN_SIZE);
+      printf("DISC frame received\n");
+
+      create_su_frame(frame_to_send, UA, TRANSMITTER); //check if this is ok pls 
+      write_frame(fd , frame_to_send, SU_SIZE);
       printf("UA frame sent\n");
 
       alarm(0);
@@ -339,17 +343,17 @@ int ll_close_receiver(int fd) {
   uchar frame_to_receive[MAX_SIZE];
   uchar controls[] = {DISC};
   const unsigned int N_CONTROLS = 1;
-  int res = read_sv_un_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
+  int res = read_su_frame(fd, A_1, controls, N_CONTROLS, frame_to_receive);
   printf("DISC frame received\n");
 
   char frame_to_send[MAX_SIZE];
-  create_sv_un_frame(frame_to_send, DISC, RECEIVER);
+  create_su_frame(frame_to_send, DISC, RECEIVER);
 
-  write_frame(fd, frame_to_send, SV_UN_SIZE);  //sent DISC
+  write_frame(fd, frame_to_send, SU_SIZE);  //sent DISC
   printf("DISC frame sent\n");
 
   controls[0] = UA;
-  res = read_sv_un_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
+  res = read_su_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
   printf("UA frame received\n");
 
   return 0;

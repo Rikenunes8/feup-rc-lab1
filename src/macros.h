@@ -16,7 +16,7 @@
 
 
 #define MAX_SIZE 255
-#define SV_UN_SIZE 5
+#define SU_SIZE 5
 
 #define TIME_OUT 3
 #define MAX_RESENDS 3 

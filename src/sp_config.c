@@ -55,6 +55,7 @@ int close_non_canonical(int fd, struct termios* oldtio) {
     return -1;
   }
 
+  printf("Old termios structure set\n");
   close(fd);
   return 0;
 }
