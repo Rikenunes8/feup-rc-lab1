@@ -22,7 +22,7 @@ static unsigned sequence_number;
 
 void create_su_frame(uchar* frame, uchar address, uchar control) {
   frame[0] = FLAG;
-  frame[0] = address;
+  frame[1] = address;
   frame[2] = control;
   frame[3] = get_BCC_1(frame[1], frame[2]);
   frame[4] = FLAG;
@@ -87,6 +87,7 @@ int ll_open_transmitter(int fd) {
   const int N_CONTROLS = 1;
   
   create_su_frame(wframe, A_1, SET);
+  print_frame(wframe, SU_SIZE);
 
   finish = FALSE;
   send_frame = TRUE;
