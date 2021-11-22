@@ -231,9 +231,15 @@ int llwrite(int fd, uchar* data, int length) {
 
     read_value = read_su_frame(fd, A_1, controls, N_CONTROLS, rframe);
 
-    if (read_value >= 0) {
+    if (read_value == 0) {
       alarm(0);
       finish = TRUE; 
+      
+      sequence_number = (sequence_number+1)%2;
+      printf("RR_%d frame received\n", sequence_number);
+    }
+    else if (read_value > 0) {
+      printf("REJ_%d frame received\n", sequence_number);
     }
     else if (n_sends >= MAX_RESENDS) {
       printf("Limit of resends\n");
@@ -244,13 +250,7 @@ int llwrite(int fd, uchar* data, int length) {
   if (read_value < 0) {
     return -1;
   }
-  else if (read_value == 0) {
-    sequence_number = (sequence_number+1)%2;
-    printf("RR_%d frame received\n", sequence_number);
-  }
-  else {
-    printf("REJ_%d frame received\n", sequence_number);
-  }
+  
   return 0;
 }
 
