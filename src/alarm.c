@@ -1,28 +1,33 @@
-#include <stdio.h>
 #include <signal.h>
+#include <stddef.h>
+#include "log.h"
 #include "alarm.h"
 
 int n_sends, finish, send_frame;
 
 
 void alarm_handler() {
-  printf("Time out # %d\n", n_sends);
+  log_msg("Time out");
   send_frame = TRUE;
   n_sends++;
 }
 
-void set_alarm() {
+int set_alarm() {
   struct sigaction sa;
   sigset_t smask;
 
   if (sigemptyset(&smask) == -1) {
-    fprintf(stderr, "Error in sigemptyset() while setting alarm signal\n");
-    return;
+    log_err("sigemptyset() while setting alarm signal");
+    return -1;
   }
       
   sa.sa_handler = alarm_handler;
   sa.sa_mask = smask;
   sa.sa_flags = 0;
 
-  sigaction(SIGALRM, &sa, NULL);
+  if (sigaction(SIGALRM, &sa, NULL) == -1) {
+    log_err("sigaction() while setting alarm signal");
+    return -1;
+  }
+  return 0;
 }

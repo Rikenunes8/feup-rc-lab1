@@ -4,4 +4,4 @@
 
 
 void alarm_handler();
-void set_alarm();
+int set_alarm();

@@ -146,8 +146,8 @@ int ll_open_receiver(int fd) {
 
 
   uchar wframe[MAX_SIZE];
-  //create_su_frame(wframe, UA, RECEIVER);
-  create_su_frame(wframe, SET, RECEIVER); // Test failed answer
+  create_su_frame(wframe, UA, RECEIVER);
+  //create_su_frame(wframe, SET, RECEIVER); // Test failed answer
 
   write_frame(fd, wframe, SU_SIZE);
   printf("UA frame sent\n");
