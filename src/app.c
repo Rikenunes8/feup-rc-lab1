@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     printf("Usage:\tapp status port\nstatus = {transmitter, receiver}\nport = {0, 10, 11}\n");
     return -1;
   }
-  
+
 
   log_msg("Establishing connection");
   app_layer.fd = llopen(port, app_layer.status);
@@ -53,8 +53,8 @@ int main(int argc, char** argv) {
 
   if (app_layer.status == TRANSMITTER) {
     log_msg("Transfering data");
-    uchar buffer[] = {0x02, 0x03, 0x04, 0x05};
-    llwrite(app_layer.fd, buffer, 4);
+    uchar buffer[] = {0x02, 0x03, 0x04, 0x7e, 0x05};
+    llwrite(app_layer.fd, buffer, 5);
   }
   else {
     log_msg("Receiving data");

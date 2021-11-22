@@ -87,7 +87,6 @@ int ll_open_transmitter(int fd) {
   const int N_CONTROLS = 1;
   
   create_su_frame(wframe, A_1, SET);
-  print_frame(wframe, SU_SIZE);
 
   finish = FALSE;
   send_frame = TRUE;
@@ -190,7 +189,8 @@ int llwrite(int fd, uchar* data, int length) {
   if (fd < 0) return -1;
   uchar wframe[MAX_SIZE];
   uchar rframe[MAX_SIZE];
-  //int len_stuffed = byteStuffing(data, length);
+  print_frame(data, length);
+  
   const int N_CONTROLS = 2;
   uchar controls[N_CONTROLS];
 
@@ -210,6 +210,9 @@ int llwrite(int fd, uchar* data, int length) {
     return -1;
   }
   int frame_size = create_info_frame(wframe, control_to_send, data, length);
+  print_frame(wframe, frame_size);
+  frame_size = byteStuffing(wframe, frame_size);
+  print_frame(wframe, frame_size);
 
   
   finish = FALSE;
@@ -219,7 +222,6 @@ int llwrite(int fd, uchar* data, int length) {
   int read_value;
   while (!finish) {
     if (send_frame) {
-      //write_frame(fd, buffer, len_stuffed);
       write_frame(fd, wframe, frame_size);
       printf("INFORMATION Ns%d frame sent\n", sequence_number);
 
@@ -260,7 +262,10 @@ int llread(int fd, uchar* buffer) {
   uchar controls[] = {S_0, S_1};
   const int N_CONTROLS = 1;
   int frame_size = read_info_frame(fd, A_1, controls, N_CONTROLS, rframe);
-  
+  print_frame(rframe, frame_size);
+  frame_size = byteDestuffing(rframe, frame_size);
+  print_frame(rframe, frame_size);
+
   uchar control_used;
   if      (rframe[CNTRL_BYTE] == S_0) control_used = 0;
   else if (rframe[CNTRL_BYTE] == S_1) control_used = 1;

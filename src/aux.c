@@ -1,5 +1,6 @@
 #include "aux.h"
 #include <stdio.h>
+#include <string.h>
 
 
 void print_frame(uchar* frame, int length) {
@@ -24,62 +25,51 @@ uchar get_BCC_2(uchar* data, int length) {
 
 
 int byteStuffing(uchar* frame, int length) {
-  int fullLen = length + 6; int finalLen = DATA_BEGIN;
+  int finalLen = DATA_BEGIN;
 
-  char aux[fullLen];
+  uchar aux[length];
+  memcpy(aux, frame+DATA_BEGIN, length-SU_SIZE);
 
-  for (int i = DATA_BEGIN; i < fullLen; i++) {
-    aux[i] = frame[i];
-  }
-
-  for (int i = DATA_BEGIN; i < fullLen-1; i++) {
+  for (int i = 0; i < length-SU_SIZE; i++) {
     if (aux[i] == FLAG) {
-      frame[finalLen] = ESCAPE;
-      frame[finalLen+1] = FLAG_STUFFING;
-      finalLen = finalLen + 2;
+      frame[finalLen++] = ESCAPE;
+      frame[finalLen++] = FLAG_STUFFING;
     }
-
-    else if (aux [i] == ESCAPE) {
-      frame[finalLen] = ESCAPE;
-      frame[finalLen+1] = ESCAPE_STUFFING;
-      finalLen = finalLen + 2;
+    else if (aux[i] == ESCAPE) {
+      frame[finalLen++] = ESCAPE;
+      frame[finalLen++] = ESCAPE_STUFFING;
     }
-
     else {
-      finalLen++;
+      frame[finalLen++] = aux[i];
     }
   }
-
+  frame[finalLen++] = FLAG;
   return finalLen;
 }
 
 
 
 int byteDestuffing(uchar* frame, int length) {
-  char aux[length + 5]; //bcc2 is included in stuffing
-  int finalLen = DATA_BEGIN; int fullLen = length + 5;
+  int finalLen = DATA_BEGIN; 
 
-  for (int i = DATA_BEGIN; i < fullLen; i++) {
-    aux[i] = frame[i];
-  }
+  uchar aux[length];
+  memcpy(aux, frame+DATA_BEGIN, length-SU_SIZE);
 
-
-  for (int i = DATA_BEGIN; i < fullLen; i++, finalLen++) {
-    if (aux[i+1] == FLAG_STUFFING) {
-      frame[finalLen] = FLAG;
-      i++;
+  for (int i = 0; i < length-SU_SIZE; i++) {
+    if (aux[i] == ESCAPE) {
+      if (aux[i+1] == FLAG_STUFFING) {
+        frame[finalLen++] = FLAG;
+        i++;
+      }
+      else if(aux[i+1] == ESCAPE_STUFFING) {
+        frame[finalLen++] = ESCAPE;
+        i++;
+      }
     }
-
-    else if(aux[i+1] == ESCAPE_STUFFING) {
-      frame[finalLen] = ESCAPE;
-      i++;
-    }
-
     else {
-      frame[finalLen] = aux[i];
+      frame[finalLen++] = aux[i];
     }
-
   }
-
+  frame[finalLen++] = FLAG;
   return finalLen;
 } 
