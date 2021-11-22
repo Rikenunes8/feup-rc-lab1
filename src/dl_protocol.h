@@ -17,7 +17,7 @@ typedef struct {
 
 
 
-int create_su_frame(uchar* frame, uchar control, int who);
+void create_su_frame(uchar* frame, uchar address, uchar control);
 int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length);
 int read_su_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
 int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
@@ -28,10 +28,10 @@ int ll_open_transmitter(int fd);
 
 int ll_open_receiver(int fd);
 
-int llopen(char* port, int who);
+int llopen(char* port, int status);
 
 int llwrite(int fd, uchar* buffer, int length);
 
 int llread(int fd, uchar* buffer);
 
-int llclose(int fd, int who);
+int llclose(int fd, int status);

@@ -8,6 +8,7 @@
 #include "alarm.h"
 #include "state_machine.h"
 #include "aux.h"
+#include "log.h"
 
 
 extern int finish;
@@ -19,23 +20,12 @@ static unsigned sequence_number;
 
 
 
-int create_su_frame(uchar* frame, uchar control, int who) {
-  int is_command = control == SET || control == DISC;
-  int is_answer = control == UA || control == RR_0 || control == RR_1 || control == REJ_0 || control == REJ_1;
-
+void create_su_frame(uchar* frame, uchar address, uchar control) {
   frame[0] = FLAG;
-  if ((is_command && who == TRANSMITTER) || (is_answer && who == RECEIVER))
-    frame[1] = A_1;
-  else if ((is_command && who == RECEIVER) || (is_answer && who == TRANSMITTER))
-    frame[1] = A_2;
-  else {
-    return -1;
-  }
+  frame[0] = address;
   frame[2] = control;
   frame[3] = get_BCC_1(frame[1], frame[2]);
   frame[4] = FLAG;
-
-  return 0;
 }
 
 int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length) {
@@ -65,15 +55,11 @@ int read_su_frame(int fd, uchar address, uchar* controls, int n_controls, uchar*
 
   if (finish || send_frame)
     return -1;
-  else
-    return control_chosen;
+  return control_chosen;
 }
 
 int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame) {
-  uchar control;
-
   State_machine* sm = create_sm(address, controls, n_controls);
-
   uchar byte;
   while (sm->state != STOP ) {
     if (read(fd, &byte, sizeof(char)) > 0) {
@@ -100,9 +86,7 @@ int ll_open_transmitter(int fd) {
   uchar controls[] = {UA};
   const int N_CONTROLS = 1;
   
-  if (create_su_frame(wframe, SET, TRANSMITTER) < 0) {
-    return -1;
-  }
+  create_su_frame(wframe, A_1, SET);
 
   finish = FALSE;
   send_frame = TRUE;
@@ -111,8 +95,11 @@ int ll_open_transmitter(int fd) {
   int read_value;
   while (!finish) {
     if (send_frame) {
-      write_frame(fd, wframe, SU_SIZE);
-      printf("SET frame sent\n");
+      if (write_frame(fd, wframe, SU_SIZE) < 0) {
+        log_err("Sending SET frame");
+        return -1;
+      }
+      log_suc("FRAME SENT - SET");
 
       alarm(TIME_OUT);
       send_frame = FALSE;
@@ -123,70 +110,79 @@ int ll_open_transmitter(int fd) {
       alarm(0);
       finish = TRUE; 
     }
-    else if (n_sends >= MAX_RESENDS) {
-      printf("Limit of resends\n");
-      finish = TRUE;
+    else {
+      log_err("Reading UA frame");
+      if (n_sends >= MAX_RESENDS) {
+        finish = TRUE;
+      }
     }
   }
 
   if (read_value < 0) {
+    log_msg("Limit of resends reached");
     return -1;
   }
-  printf("UA frame received\n");
+  log_suc("FRAME RECEIVED - UA");
 
   return fd;
 }
 
 int ll_open_receiver(int fd) {
   uchar rframe[MAX_SIZE];
-  uchar controls[] = {SET};
-  const unsigned int N_CONTROLS = 1;
-  int res = read_su_frame(fd, A_1, controls, N_CONTROLS, rframe);
-  printf("SET frame received\n");
-
-
   uchar wframe[MAX_SIZE];
-  create_su_frame(wframe, UA, RECEIVER);
-  //create_su_frame(wframe, SET, RECEIVER); // Test failed answer
+  uchar controls[] = {SET};
+  const int N_CONTROLS = 1;
+  if (read_su_frame(fd, A_1, controls, N_CONTROLS, rframe) < 0) {
+    log_err("Reading SET frame");
+    return -1;
+  }
+  log_suc("FRAME RECEIVED - SET");
 
-  write_frame(fd, wframe, SU_SIZE);
-  printf("UA frame sent\n");
 
+  create_su_frame(wframe, A_1, UA);
+  //create_su_frame(wframe, A_1, SET); // Test failed answer
+
+  if (write_frame(fd, wframe, SU_SIZE) < 0) {
+    log_err("Sending UA frame");
+    return -1;
+  }
+  log_suc("FRAME SENT - UA");
   return 0;
 }
 
-int llopen(char* port, int who) {
+int llopen(char* port, int status) {
 
   int fd = open_non_canonical(port, &oldtio, 0, 5);
   if (fd < 0) {
+    log_err("Openning port");
     return -1;
   }
-  set_alarm();
+  if (set_alarm() < 0) {
+    log_err("Setting alarm");
+    return -1;
+  }
 
   sequence_number = 0;
 
+  int res;
+  if (status == TRANSMITTER) {
+    res = ll_open_transmitter(fd);
+  }
+  else if (status == RECEIVER) {
+    res = ll_open_receiver(fd);
+  }
+  else {
+    log_err("Wrong status");
+    return -1;
+  }
 
-  if (who == TRANSMITTER) {
-    int ok = ll_open_transmitter(fd);
-    if (ok < 0) {
-      close_non_canonical(fd, &oldtio);
-      return -1;
-    }
-    else {
-      return fd;
-    }
+  if (res < 0) {
+    log_err("Opening connection");
+    close_non_canonical(fd, &oldtio);
+    return -1;
   }
-  else if (who == RECEIVER) {
-    int ok = ll_open_receiver(fd);
-    if (ok < 0) {
-      close_non_canonical(fd, &oldtio);
-      return -1;
-    }
-    else {
-      return fd;
-    }
-  }
-  return -1;
+  
+  return fd;
 }
 
 int llwrite(int fd, uchar* data, int length) {
@@ -292,7 +288,7 @@ int llread(int fd, uchar* buffer) {
     i_control = (control_used+1)%2;
     sequence_number = i_control;
   }
-  create_su_frame(wframe, controls_to_send[i_control], RECEIVER);
+  create_su_frame(wframe, A_1, controls_to_send[i_control]);
 
   write_frame(fd, wframe, SU_SIZE);
   
@@ -308,9 +304,7 @@ int ll_close_transmitter(int fd) {
   uchar controls[] = {DISC};
   const int N_CONTROLS = 1;
   
-  if (create_su_frame(wframe, DISC, TRANSMITTER) < 0) {
-    return -1;
-  }
+  create_su_frame(wframe, A_1, DISC);
 
   finish = FALSE;
   send_frame = TRUE;
@@ -320,7 +314,7 @@ int ll_close_transmitter(int fd) {
   while (!finish) {
     if (send_frame) {
       write_frame(fd, wframe, SU_SIZE);
-      printf("DISC frame sent\n");
+      log_suc("FRAME SENT - DISC");
 
       alarm(TIME_OUT);
       send_frame = FALSE;
@@ -330,17 +324,17 @@ int ll_close_transmitter(int fd) {
 
     
     if (read_value >= 0) {
-      printf("DISC frame received\n");
+      log_suc("FRAME RECEIVED - DISC");
 
-      create_su_frame(wframe, UA, TRANSMITTER); //check if this is ok pls 
+      create_su_frame(wframe, A_2, UA); //check if this is ok pls 
       write_frame(fd , wframe, SU_SIZE);
-      printf("UA frame sent\n");
+      log_suc("FRAME SENT - UA");
 
       alarm(0);
       finish = TRUE; 
     }
     else if (n_sends >= MAX_RESENDS) {
-      printf("Limit of resends\n");
+      log_msg("Limit of resends reached");
       finish = TRUE;
     }
   }
@@ -351,13 +345,14 @@ int ll_close_receiver(int fd) {
   uchar rframe[MAX_SIZE];
   uchar controls[] = {DISC};
   const unsigned int N_CONTROLS = 1;
-  int res = read_su_frame(fd, A_1, controls, N_CONTROLS, rframe);
-  printf("DISC frame received\n");
-
-  uchar wframe[MAX_SIZE];
-  if (create_su_frame(wframe, DISC, RECEIVER) < 0) {
+  if (read_su_frame(fd, A_1, controls, N_CONTROLS, rframe) < 0) {
+    log_err("Reading DISC frame");
     return -1;
   }
+  log_suc("FRAME RECEIVED - DISC");
+
+  uchar wframe[MAX_SIZE];
+  create_su_frame(wframe, A_2, DISC);
   
   finish = FALSE;
   send_frame = TRUE;
@@ -366,8 +361,11 @@ int ll_close_receiver(int fd) {
   int read_value;
   while (!finish) {
     if (send_frame) {
-      write_frame(fd, wframe, SU_SIZE);
-      printf("DISC frame sent\n");
+      if (write_frame(fd, wframe, SU_SIZE) < 0) {
+        log_err("Sending UA frame");
+        return -1; // TODO: should be this here?
+      }
+      log_suc("FRAME SENT - DISC");
 
       alarm(TIME_OUT);
       send_frame = FALSE;
@@ -380,28 +378,28 @@ int ll_close_receiver(int fd) {
       finish = TRUE; 
     }
     else if (n_sends >= MAX_RESENDS) {
-      printf("Limit of resends\n");
       finish = TRUE;
     }
   }
 
   if (read_value < 0) {
+    log_msg("Limit of resends reached");
     return -1;
   }
   
-  printf("UA frame received\n");
+  log_suc("FRAME RECEIVED - UA");
   return 0;
 }
 
-int llclose(int fd, int who) {
+int llclose(int fd, int status) {
   if (fd < 0) {
     return -1;
   }
 
-  if (who == TRANSMITTER) {
+  if (status == TRANSMITTER) {
     ll_close_transmitter(fd);
   }
-  else if (who == RECEIVER) {
+  else if (status == RECEIVER) {
     ll_close_receiver(fd);
   }
 

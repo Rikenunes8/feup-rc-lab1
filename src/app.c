@@ -7,24 +7,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "app.h"
 #include "dl_protocol.h"
 #include "log.h"
 
+static Application_layer app_layer;
 
-
-
-int main(int argc, char** argv) {
-  int who;
-  char port[12];
+int parse_args(char* port, int argc, char** argv) {
   if  (argc != 3) {
     log_err("Wrong number of arguments");
     return -1;
   }
   if (strcmp(argv[1], "transmitter") == 0) {
-    who = TRANSMITTER;
+    app_layer.status = TRANSMITTER;
   } 
   else if (strcmp(argv[1], "receiver") == 0) {
-    who = RECEIVER;
+    app_layer.status = RECEIVER;
   }
   else {
     log_err("Second argument is wrong");
@@ -37,29 +35,42 @@ int main(int argc, char** argv) {
     return -1;
   }
   snprintf(port, 12, "/dev/ttyS%d", nport);
+  return 0;
+}
+
+int main(int argc, char** argv) {
+  char port[12];
+  if (parse_args(port, argc, argv) < 0) {
+    printf("Usage:\tapp status port\nstatus = {transmitter, receiver}\nport = {0, 10, 11}\n");
+    return -1;
+  }
+  
+
+  log_msg("Establishing connection");
+  app_layer.fd = llopen(port, app_layer.status);
 
 
-  printf("Establishing connection\n");
-  int fd = llopen(port, who);
 
-  if (who == TRANSMITTER) {
-    printf("Transfering data\n");
+  if (app_layer.status == TRANSMITTER) {
+    log_msg("Transfering data");
     uchar buffer[] = {0x02, 0x03, 0x04, 0x05};
-    llwrite(fd, buffer, 4);
+    llwrite(app_layer.fd, buffer, 4);
   }
   else {
-    printf("Receiving data\n");
+    log_msg("Receiving data");
     uchar buffer[MAX_SIZE];
-    int size = llread(fd, buffer);
+    int size = llread(app_layer.fd, buffer);
     for (int i = 0; i < size; i++) {
       printf(":%x", buffer[i]);
     }
     printf("\n");
   }
   
-  printf("Ending connection\n");
-  int ret = llclose(fd, who);
 
-  printf("Closing\n");
+
+  log_msg("Ending connection");
+  int ret = llclose(app_layer.fd, app_layer.status);
+
+  log_msg("Closing");
   return ret;
 }
