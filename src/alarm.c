@@ -25,6 +25,4 @@ void set_alarm() {
   sa.sa_flags = 0;
 
   sigaction(SIGALRM, &sa, NULL);
-  
-  siginterrupt(SIGALRM, 1);
 }

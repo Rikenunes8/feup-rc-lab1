@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
   int fd = llopen(argv[1], RECEIVER);
   
   printf("Receiving data\n");
-  char buffer[MAX_SIZE];
+  uchar buffer[MAX_SIZE];
   int size = llread(fd, buffer);
   for (int i = 0; i < size; i++) {
     printf(":%x", buffer[i]);

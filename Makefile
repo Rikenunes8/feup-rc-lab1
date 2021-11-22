@@ -4,10 +4,10 @@ COMMON_H = src/dl_protocol.h src/macros.h src/alarm.h src/sp_config.h src/state_
 all: emissor recetor
 
 emissor:
-	gcc -o emissor src/emissor.c ${COMMON_C}
+	gcc -Wall -o emissor src/emissor.c ${COMMON_C}
 
 recetor: 
-	gcc -o recetor src/recetor.c ${COMMON_C}
+	gcc -Wall -o recetor src/recetor.c ${COMMON_C}
 
 clean:
 	rm -f emissor recetor

@@ -23,7 +23,7 @@ uchar get_BCC_2(uchar* data, int length) {
 }
 
 
-int byteStuffing(char* frame, int length) {
+int byteStuffing(uchar* frame, int length) {
   int fullLen = length + 6; int finalLen = DATA_BEGIN;
 
   char aux[fullLen];
@@ -55,7 +55,7 @@ int byteStuffing(char* frame, int length) {
 
 
 
-int byteDestuffing(char* frame, int length) {
+int byteDestuffing(uchar* frame, int length) {
   char aux[length + 5]; //bcc2 is included in stuffing
   int finalLen = DATA_BEGIN; int fullLen = length + 5;
 
