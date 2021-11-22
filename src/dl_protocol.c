@@ -343,15 +343,50 @@ int ll_close_receiver(int fd) {
   printf("DISC frame received\n");
 
   char frame_to_send[MAX_SIZE];
-  create_sv_un_frame(frame_to_send, DISC, RECEIVER);
+  if (create_sv_un_frame(frame_to_send, DISC, RECEIVER)) < 0 {
+    return -1;
+  }
+  
+  finish = FALSE;
+  send_frame = TRUE;
+  n_sends = 0;
+  
+  int read_value;
+  while (!finish) {
+    if (send_frame) {
+      write_frame(fd, frame_to_send, SV_UN_SIZE);
+      printf("DISC frame sent\n");
 
+      alarm(TIME_OUT);
+      send_frame = FALSE;
+    }
+    controls[0] = UA
+    read_value = read_sv_un_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
+    
+    if (read_value >= 0) {
+      alarm(0);
+      finish = TRUE; 
+    }
+    else if (n_sends >= MAX_RESENDS) {
+      printf("Limit of resends\n");
+      finish = TRUE;
+    }
+  }
+
+  if (read_value < 0) {
+    return -1;
+  }
+  
+  printf("UA frame received\n");
+  
+  /*
   write_frame(fd, frame_to_send, SV_UN_SIZE);  //sent DISC
   printf("DISC frame sent\n");
 
   controls[0] = UA;
   res = read_sv_un_frame(fd, A_2, controls, N_CONTROLS, frame_to_receive);
   printf("UA frame received\n");
-
+  */
   return 0;
 }
 
