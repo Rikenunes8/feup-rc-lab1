@@ -18,9 +18,9 @@ typedef struct {
 struct termios oldtio;
 unsigned sequence_number;
 
-int create_sv_un_frame(uchar* frame, uchar control, int who);
+int create_su_frame(uchar* frame, uchar control, int who);
 int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length);
-int read_sv_un_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
+int read_su_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
 int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
 int write_frame(int fd, uchar* frame, unsigned size);
 
