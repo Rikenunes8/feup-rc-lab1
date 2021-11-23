@@ -40,7 +40,6 @@ int parse_args(char* port, int argc, char** argv) {
 
 
 int buildControlPacket(uchar* packet, uchar type, off_t* size) {
-  printf("%x  ----  %d", *size, *size);
   uchar offsize = (uchar)sizeof(off_t);
   packet[0] = type;
   packet[1] = FILE_SIZE;
