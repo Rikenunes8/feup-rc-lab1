@@ -29,7 +29,7 @@ int parse_args(char* port, int argc, char** argv) {
     return -1;
   }
 
-  //int nport = atoi(argv[2]); //atoi returns 0 even if its not a digit: if input was "//" nport would be 0 incorrectly
+  int nport = atoi(argv[2]); //atoi returns 0 even if its not a digit: if input was "//" nport would be 0 incorrectly
   if (strcmp(argv[2], "0") != 0 && strcmp(argv[2], "10") != 0 && strcmp(argv[2], "11") != 0) {
     log_err("Third argument is not a valid port");
     return -1;
