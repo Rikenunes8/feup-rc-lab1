@@ -41,8 +41,14 @@
 #define RR_1    0x85
 #define REJ_0   0x01
 #define REJ_1   0x81
-
 #define S_0     0x00
 #define S_1     0x40
+
+#define PACK_DATA  0x01
+#define PACK_START 0x02
+#define PACK_END   0x03
+
+#define FILE_SIZE 0x00
+#define FILE_NAME 0x01
 
 typedef unsigned char uchar;

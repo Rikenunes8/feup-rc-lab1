@@ -96,10 +96,10 @@ int ll_open_transmitter(int fd) {
   while (!finish) {
     if (send_frame) {
       if (write_frame(fd, wframe, SU_SIZE) < 0) {
-        log_err("Sending SET frame");
+        log_err("Fail reading SET frame");
         return -1;
       }
-      log_suc("FRAME SENT - SET");
+      log_sent("SET", -1);
 
       alarm(TIME_OUT);
       send_frame = FALSE;
@@ -111,7 +111,7 @@ int ll_open_transmitter(int fd) {
       finish = TRUE; 
     }
     else {
-      log_err("Reading UA frame");
+      log_err("Fail reading UA frame");
       if (n_sends >= MAX_RESENDS) {
         finish = TRUE;
       }
@@ -122,7 +122,7 @@ int ll_open_transmitter(int fd) {
     log_msg("Limit of resends reached");
     return -1;
   }
-  log_suc("FRAME RECEIVED - UA");
+  log_rcvd("UA", -1);
 
   return fd;
 }
@@ -133,20 +133,20 @@ int ll_open_receiver(int fd) {
   uchar controls[] = {SET};
   const int N_CONTROLS = 1;
   if (read_su_frame(fd, A_1, controls, N_CONTROLS, rframe) < 0) {
-    log_err("Reading SET frame");
+    log_err("Fail reading SET frame");
     return -1;
   }
-  log_suc("FRAME RECEIVED - SET");
+  log_rcvd("SET", -1);
 
 
   create_su_frame(wframe, A_1, UA);
   //create_su_frame(wframe, A_1, SET); // Test failed answer
 
   if (write_frame(fd, wframe, SU_SIZE) < 0) {
-    log_err("Sending UA frame");
+    log_err("Fail sending UA frame");
     return -1;
   }
-  log_suc("FRAME SENT - UA");
+  log_sent("UA", -1);
   return 0;
 }
 
@@ -210,7 +210,6 @@ int llwrite(int fd, uchar* data, int length) {
     return -1;
   }
   int frame_size = create_info_frame(wframe, control_to_send, data, length);
-  print_frame(wframe, frame_size);
   frame_size = byteStuffing(wframe, frame_size);
   print_frame(wframe, frame_size);
 
@@ -223,7 +222,7 @@ int llwrite(int fd, uchar* data, int length) {
   while (!finish) {
     if (send_frame) {
       write_frame(fd, wframe, frame_size);
-      printf("INFORMATION Ns%d frame sent\n", sequence_number);
+      log_sent("INFO", sequence_number);
 
       alarm(TIME_OUT);
       send_frame = FALSE;
@@ -236,13 +235,17 @@ int llwrite(int fd, uchar* data, int length) {
       finish = TRUE; 
       
       sequence_number = (sequence_number+1)%2;
-      printf("RR_%d frame received\n", sequence_number);
+      log_rcvd("RR", sequence_number);
     }
     else if (read_value > 0) {
-      printf("REJ_%d frame received\n", sequence_number);
+      alarm(0);
+      send_frame = TRUE;
+      n_sends++;
+      log_rcvd("REJ", sequence_number);
     }
-    else if (n_sends >= MAX_RESENDS) {
-      printf("Limit of resends\n");
+    
+    if (n_sends >= MAX_RESENDS) {
+      log_msg("Limit of resends");
       finish = TRUE;
     }
   }
@@ -260,47 +263,57 @@ int llread(int fd, uchar* buffer) {
   uchar rframe[MAX_SIZE];
   
   uchar controls[] = {S_0, S_1};
-  const int N_CONTROLS = 1;
-  int frame_size = read_info_frame(fd, A_1, controls, N_CONTROLS, rframe);
-  print_frame(rframe, frame_size);
-  frame_size = byteDestuffing(rframe, frame_size);
-  print_frame(rframe, frame_size);
-
-  uchar control_used;
-  if      (rframe[CNTRL_BYTE] == S_0) control_used = 0;
-  else if (rframe[CNTRL_BYTE] == S_1) control_used = 1;
-  else return -1;
-
-  printf("INFORMATION Ns%d frame received\n", control_used);
-  
+  const int N_CONTROLS = 2;
   uchar controls_to_send[] = {RR_0, RR_1, REJ_0, REJ_1};
-  
-  uchar i_control;
-  if (control_used == sequence_number) { // new frame
-    if (rframe[frame_size-2] == get_BCC_2(rframe+DATA_BEGIN, frame_size-6)) { // bcc2 is correct
-      for (int i = 0; i < frame_size - 6; i++) {
-        buffer[i] = rframe[DATA_BEGIN + i];
-      }
+  int frame_size;
+  int successfull_read = FALSE;
+  // int test = 1;
 
+  do {
+    frame_size = read_info_frame(fd, A_1, controls, N_CONTROLS, rframe);
+    frame_size = byteDestuffing(rframe, frame_size);
+    print_frame(rframe, frame_size);
+
+    uchar control_used;
+    if      (rframe[CNTRL_BYTE] == S_0) control_used = 0;
+    else if (rframe[CNTRL_BYTE] == S_1) control_used = 1;
+    else return -1;
+
+    log_rcvd("INFO", control_used);
+    /*if (test) {
+      rframe[frame_size-2] = 0x33; // TEST
+      test = 0;
+    }*/
+    
+    uchar i_control;
+    if (control_used == sequence_number) { // new frame
+      if (rframe[frame_size-2] == get_BCC_2(rframe+DATA_BEGIN, frame_size-6)) { // bcc2 is correct
+        for (int i = 0; i < frame_size - 6; i++) {
+          buffer[i] = rframe[DATA_BEGIN + i];
+        }
+
+        i_control = (control_used+1)%2;
+        sequence_number = i_control;
+      }
+      else {
+        i_control = 2+control_used;
+        sequence_number = control_used;
+      }
+    }
+    else { // same frame -> discard
       i_control = (control_used+1)%2;
       sequence_number = i_control;
     }
-    else {
-      i_control = 2+control_used;
-      sequence_number = control_used;
-    }
-  }
-  else { // same frame -> discard
-    i_control = (control_used+1)%2;
-    sequence_number = i_control;
-  }
-  create_su_frame(wframe, A_1, controls_to_send[i_control]);
+    create_su_frame(wframe, A_1, controls_to_send[i_control]);
 
-  write_frame(fd, wframe, SU_SIZE);
-  
-  char* text[] = {"RR_0", "RR_1", "REJ_0", "REJ_1"};
-  printf("%s frame sent\n", text[i_control]);
-
+    write_frame(fd, wframe, SU_SIZE);
+    
+    char* text[] = {"RR", "REJ"};
+    log_sent(text[i_control/2], i_control%2);
+    
+    if (i_control / 2 == 0)
+      successfull_read = TRUE;
+  } while (!successfull_read);
   return frame_size-6;
 }
 
@@ -320,7 +333,7 @@ int ll_close_transmitter(int fd) {
   while (!finish) {
     if (send_frame) {
       write_frame(fd, wframe, SU_SIZE);
-      log_suc("FRAME SENT - DISC");
+      log_sent("DISC", -1);
 
       alarm(TIME_OUT);
       send_frame = FALSE;
@@ -330,11 +343,11 @@ int ll_close_transmitter(int fd) {
 
     
     if (read_value >= 0) {
-      log_suc("FRAME RECEIVED - DISC");
+      log_rcvd("DISC", -1);
 
       create_su_frame(wframe, A_2, UA); //check if this is ok pls 
       write_frame(fd , wframe, SU_SIZE);
-      log_suc("FRAME SENT - UA");
+      log_sent("UA", -1);
 
       alarm(0);
       finish = TRUE; 
@@ -355,7 +368,7 @@ int ll_close_receiver(int fd) {
     log_err("Reading DISC frame");
     return -1;
   }
-  log_suc("FRAME RECEIVED - DISC");
+  log_rcvd("DISC", -1);
 
   uchar wframe[MAX_SIZE];
   create_su_frame(wframe, A_2, DISC);
@@ -371,7 +384,7 @@ int ll_close_receiver(int fd) {
         log_err("Sending UA frame");
         return -1; // TODO: should be this here?
       }
-      log_suc("FRAME SENT - DISC");
+      log_sent("DISC", -1);
 
       alarm(TIME_OUT);
       send_frame = FALSE;
@@ -392,8 +405,7 @@ int ll_close_receiver(int fd) {
     log_msg("Limit of resends reached");
     return -1;
   }
-  
-  log_suc("FRAME RECEIVED - UA");
+  log_rcvd("UA", -1);
   return 0;
 }
 

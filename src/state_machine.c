@@ -51,7 +51,7 @@ void event_handler_sm(State_machine* sm, uchar byte, uchar* frame, int frame_typ
 }
 
 void process_start(State_machine* sm, uchar byte, int* i, uchar* frame) {
-  (*i) = 0;
+  *i = 0;
   if (byte == FLAG) {
     sm->state = FLAG_RCV;
     frame[(*i)++] = byte;
@@ -60,7 +60,7 @@ void process_start(State_machine* sm, uchar byte, int* i, uchar* frame) {
 
 void process_flag_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
   if (byte == FLAG) {
-    (*i) = 0;
+    *i = 0;
     frame[(*i)++] = byte;
   }
   else if (byte == sm->address) {

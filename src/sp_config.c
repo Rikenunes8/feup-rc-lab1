@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "macros.h"
+#include "log.h"
 
 int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) {
   struct termios newtio;
@@ -42,7 +43,7 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
     perror("tcsetattr");
     return -1;
   }
-  printf("New termios structure set\n");
+  log_msg("New termios structure set");
 
   return fd;
 }
@@ -55,7 +56,7 @@ int close_non_canonical(int fd, struct termios* oldtio) {
     return -1;
   }
 
-  printf("Old termios structure set\n");
+  log_msg("Old termios structure set");
   close(fd);
   return 0;
 }
