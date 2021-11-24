@@ -12,12 +12,12 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
 
   int fd = open(file, O_RDWR | O_NOCTTY );
   if (fd < 0) {
-    perror(file);
+    log_err("open() - openning port");
     return -1; 
   }
 
   if ( tcgetattr(fd, oldtio) == -1) { /* save current port settings */
-    perror("tcgetattr");
+    log_err("tcgetattr() - getting old configuration");
     return -1;
   }
 
@@ -31,7 +31,7 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
   newtio.c_lflag = 0;
 
   newtio.c_cc[VTIME] = vtime; /* inter-character timer unused */
-  newtio.c_cc[VMIN] = vmin; /* blocking read until 5 chars received */
+  newtio.c_cc[VMIN] = vmin; /* blocking read until vmin chars received */
 
   /*
   VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a
@@ -40,7 +40,7 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
   tcflush(fd, TCIOFLUSH);
 
   if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
-    perror("tcsetattr");
+    log_err("tcsetattr() - setting new configuration");
     return -1;
   }
   log_msg("New termios structure set");
@@ -52,11 +52,15 @@ int close_non_canonical(int fd, struct termios* oldtio) {
   sleep(1);
   
   if (tcsetattr(fd,TCSANOW, oldtio) == -1) {
-    perror("tcsetattr");
+    log_err("tcsetattr() - setting old configuration");
     return -1;
   }
 
   log_msg("Old termios structure set");
-  close(fd);
+  if (close(fd) < 0) {
+    log_err("close() - closing port");
+    return -1;
+  }
+
   return 0;
 }

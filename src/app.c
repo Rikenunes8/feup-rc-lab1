@@ -10,7 +10,6 @@
 #include "app.h"
 #include "dl_protocol.h"
 #include "log.h"
-#include "aux.h"
 
 static Application_layer app_layer;
 
