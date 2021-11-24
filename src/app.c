@@ -15,14 +15,28 @@
 static Application_layer app_layer;
 
 int parse_args(char* port, int argc, char** argv) {
-  if  (argc != 3) {
+  if  (argc < 3) {
     log_err("Wrong number of arguments");
     return -1;
   }
+
   if (strcmp(argv[1], "transmitter") == 0) {
+
+    if (argc != 4) {
+      log_err("Wrong number of arguments");
+      return -1;
+    }
+
     app_layer.status = TRANSMITTER;
   } 
+
   else if (strcmp(argv[1], "receiver") == 0) {
+
+    if (argc != 3) {
+      log_err("Wrong number of arguments");
+      return -1;
+    }
+
     app_layer.status = RECEIVER;
   }
   else {
@@ -169,7 +183,8 @@ int main(int argc, char** argv) {
     printf("Usage:\tapp status port\nstatus = {transmitter, receiver}\nport = {0, 10, 11}\n");
     return -1;
   }
-  strcpy(app_layer.filename, "pinguim.gif");
+
+  if (argc == 4) strcpy(app_layer.filename, argv[3]);
 
 
   log_msg("Establishing connection");
