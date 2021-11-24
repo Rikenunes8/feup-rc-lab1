@@ -184,7 +184,9 @@ int receiver() {
 int main(int argc, char** argv) {
   char port[12];
   if (parse_args(port, argc, argv) < 0) {
-    printf("Usage:\tapp status port\nstatus = {transmitter, receiver}\nport = {0, 10, 11}\n");
+    //printf("Usage:\tapp status port\nstatus = {transmitter, receiver}\nport = {0, 10, 11}\n");
+    printf("Transmitter Usage:\t./app transmitter port filename\n");
+    printf("Receiver Usage:\t./app receiver port path\nport = {0, 10, 11}\npath is optional\n");
     return -1;
   }
 
