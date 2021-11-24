@@ -14,11 +14,13 @@
 #define SUPERVISION 1
 #define UNNUMBERED  2
 
-
-#define MAX_SIZE 255
 #define SU_SIZE 5
+#define MAX_DATA_SIZE 256
+#define MAX_PACK_SIZE (4 + MAX_DATA_SIZE)
+#define MAX_STUF_SIZE (2 * MAX_PACK_SIZE)
+#define MAX_STUF_FRAME_SIZE (1 + MAX_STUF_SIZE + SU_SIZE)
 
-#define TIME_OUT 3
+#define TIME_OUT    3
 #define MAX_RESENDS 3 
 
 #define ADDRS_BYTE 1

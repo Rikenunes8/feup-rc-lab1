@@ -7,10 +7,11 @@
 typedef struct {
   char port[20];
   int baudRate;
-  unsigned int sequenceNumber;
+  uchar sequenceNumber;
   unsigned int timeout;
   unsigned int numTransmissions;
-  char frame[MAX_SIZE];
+  uchar frame[MAX_STUF_SIZE];
+  int frame_size;
 } LinkLayer;
 
 

@@ -38,7 +38,6 @@ int parse_args(char* port, int argc, char** argv) {
   return 0;
 }
 
-
 int buildControlPacket(uchar* packet, uchar type, off_t* size) {
   uchar offsize = (uchar)sizeof(off_t);
   packet[0] = type;
@@ -53,65 +52,112 @@ int buildControlPacket(uchar* packet, uchar type, off_t* size) {
   return 5 + offsize + filename_len;
 }
 
+int buildDataPacket(uchar* packet, uchar n, uchar* data, uchar data_size) {
+  packet[0] = PACK_DATA;
+  packet[1] = n % 256;
+  packet[2] = data_size / 256;
+  packet[3] = data_size % 256;
+  memcpy(&packet[4], data, data_size);
+
+  return data_size+4;
+}
+
 int transmitter() {
+  int size;
   int fd = open(app_layer.filename, O_RDONLY);
+  if (fd < 0) {
+    log_err("Could not open file to be transmitted");
+    return -1;
+  }
 
   struct stat file_info;
   fstat(fd, &file_info);
 
-  uchar buffer[MAX_SIZE];
-  int size = buildControlPacket(buffer, PACK_START, &file_info.st_size);
-  if (llwrite(app_layer.fd, buffer, size) < 0) {
+  uchar packet[MAX_PACK_SIZE];
+  size = buildControlPacket(packet, PACK_START, &file_info.st_size);
+  if (llwrite(app_layer.fd, packet, size) < 0) {
     return -1;
   }
 
+  uchar sequence_number = 0;
+  uchar data[MAX_DATA_SIZE];
+  int data_size;
+  do {
+    data_size = read(fd, data, MAX_DATA_SIZE);
 
-  while (FALSE) {
+    size = buildDataPacket(packet, sequence_number, data, data_size);
+    if (llwrite(app_layer.fd, packet, size) < 0) {
+      return -1; 
+    }
+    sequence_number++;
 
+  } while (data_size == MAX_DATA_SIZE);
+  
+  if (close(fd) < 0) {
+    log_err("Fail closing file was transmitted");
+    return -1;
   }
+  
 
-
-  buffer[0] = PACK_END;
-  if (llwrite(app_layer.fd, buffer, size) < 0) {
+  size = buildControlPacket(packet, PACK_END, &file_info.st_size);
+  //packet[0] = PACK_END;
+  if (llwrite(app_layer.fd, packet, size) < 0) {
     return -1;
   }
   return 0;
 }
 
 int receiver() {
-  uchar buffer[MAX_SIZE];
+  uchar packet[MAX_PACK_SIZE];
+  int fd = open(app_layer.filename, O_WRONLY | O_CREAT);
+  if (fd < 0) {
+    log_err("Could not open file to be transmitted");
+    return -1;
+  }
+
 
   while (TRUE) {
-    int size = llread(app_layer.fd, buffer);
+    int size = llread(app_layer.fd, packet);
 
-    if (buffer[0] == PACK_START) {
+    if (packet[0] == PACK_START) {
       off_t filesize = 0;
       int next_tlv = 1;
       
       while (next_tlv != size) {
-        if (buffer[next_tlv] == FILE_SIZE) {
-          for (int i = next_tlv+2; i < next_tlv+2+buffer[next_tlv+1]; i++) {
-            filesize += buffer[i] << (8*(i-(next_tlv+2)));
+        if (packet[next_tlv] == FILE_SIZE) {
+          for (int i = next_tlv+2; i < next_tlv+2+packet[next_tlv+1]; i++) {
+            filesize += packet[i] << (8*(i-(next_tlv+2)));
           }
-          next_tlv += buffer[next_tlv+1]+2;
+          next_tlv += packet[next_tlv+1]+2;
         }
-        else if (buffer[next_tlv] == FILE_NAME) {
-          int filename_len = buffer[next_tlv+1];
-          memcpy(app_layer.filename, &buffer[next_tlv+2], filename_len);
+        else if (packet[next_tlv] == FILE_NAME) {
+          int filename_len = packet[next_tlv+1];
+          memcpy(app_layer.filename, &packet[next_tlv+2], filename_len);
           app_layer.filename[filename_len] = '\0';
+          strcpy(app_layer.filename, "test.gif"); // TEST
           next_tlv += filename_len + 2;
         }
       }
     }
-    else if (buffer[0] == PACK_END) {
+    else if (packet[0] == PACK_END) {
       break;
     }
-    else if (buffer[0] == PACK_DATA) {
-
+    else if (packet[0] == PACK_DATA) {
+      int data_size = packet[2]*256 + packet[3];
+      if (write(fd, &packet[4], data_size) < 0) {
+        log_err("Failed to writing data bytes to the file");
+        return -1;
+      }
+      
     }
     else {
       printf("Fail");
     }
+  }
+
+  if (close(fd) < 0) {
+    log_err("Fail closing file wrote");
+    return -1;
   }
   return 0;
 }

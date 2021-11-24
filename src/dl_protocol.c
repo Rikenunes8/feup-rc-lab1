@@ -16,7 +16,8 @@ extern int send_frame;
 extern int n_sends;
 
 static struct termios oldtio;
-static unsigned sequence_number;
+static LinkLayer ll;
+//static unsigned sequence_number;
 
 
 
@@ -81,8 +82,8 @@ int write_frame(int fd, uchar* frame, unsigned size) {
 
 
 int ll_open_transmitter(int fd) {
-  uchar wframe[MAX_SIZE];
-  uchar rframe[MAX_SIZE];
+  uchar wframe[SU_SIZE];
+  uchar rframe[SU_SIZE];
   uchar controls[] = {UA};
   const int N_CONTROLS = 1;
   
@@ -101,7 +102,7 @@ int ll_open_transmitter(int fd) {
       }
       log_sent("SET", -1);
 
-      alarm(TIME_OUT);
+      alarm(ll.timeout);
       send_frame = FALSE;
     }
     read_value = read_su_frame(fd, A_1, controls, N_CONTROLS, rframe);
@@ -112,7 +113,7 @@ int ll_open_transmitter(int fd) {
     }
     else {
       log_err("Fail reading UA frame");
-      if (n_sends >= MAX_RESENDS) {
+      if (n_sends >= ll.numTransmissions) {
         finish = TRUE;
       }
     }
@@ -128,8 +129,8 @@ int ll_open_transmitter(int fd) {
 }
 
 int ll_open_receiver(int fd) {
-  uchar rframe[MAX_SIZE];
-  uchar wframe[MAX_SIZE];
+  uchar rframe[SU_SIZE];
+  uchar wframe[SU_SIZE];
   uchar controls[] = {SET};
   const int N_CONTROLS = 1;
   if (read_su_frame(fd, A_1, controls, N_CONTROLS, rframe) < 0) {
@@ -162,7 +163,13 @@ int llopen(char* port, int status) {
     return -1;
   }
 
-  sequence_number = 0;
+  
+  strcpy(ll.port, port);
+  ll.baudRate = BAUDRATE;
+  ll.sequenceNumber = 0x00;
+  ll.timeout = TIME_OUT;
+  ll.numTransmissions = MAX_RESENDS;
+  
 
   int res;
   if (status == TRANSMITTER) {
@@ -187,8 +194,8 @@ int llopen(char* port, int status) {
 
 int llwrite(int fd, uchar* data, int length) {
   if (fd < 0) return -1;
-  uchar wframe[MAX_SIZE];
-  uchar rframe[MAX_SIZE];
+  uchar wframe[MAX_STUF_FRAME_SIZE];
+  uchar rframe[SU_SIZE];
   print_frame(data, length);
   
   const int N_CONTROLS = 2;
@@ -196,12 +203,12 @@ int llwrite(int fd, uchar* data, int length) {
 
   uchar control_to_send;
 
-  if (sequence_number == 0) {
+  if (ll.sequenceNumber == 0) {
     control_to_send = S_0;
     controls[0] = RR_1;
     controls[1] = REJ_0;
   }
-  else if (sequence_number == 1) {
+  else if (ll.sequenceNumber == 1) {
     control_to_send = S_1;
     controls[0] = RR_0;
     controls[1] = REJ_1;
@@ -222,9 +229,9 @@ int llwrite(int fd, uchar* data, int length) {
   while (!finish) {
     if (send_frame) {
       write_frame(fd, wframe, frame_size);
-      log_sent("INFO", sequence_number);
+      log_sent("INFO", ll.sequenceNumber);
 
-      alarm(TIME_OUT);
+      alarm(ll.timeout);
       send_frame = FALSE;
     }
 
@@ -234,17 +241,17 @@ int llwrite(int fd, uchar* data, int length) {
       alarm(0);
       finish = TRUE; 
       
-      sequence_number = (sequence_number+1)%2;
-      log_rcvd("RR", sequence_number);
+      ll.sequenceNumber = (ll.sequenceNumber+1)%2;
+      log_rcvd("RR", ll.sequenceNumber);
     }
     else if (read_value > 0) {
       alarm(0);
       send_frame = TRUE;
       n_sends++;
-      log_rcvd("REJ", sequence_number);
+      log_rcvd("REJ", ll.sequenceNumber);
     }
     
-    if (n_sends >= MAX_RESENDS) {
+    if (n_sends >= ll.numTransmissions) {
       log_msg("Limit of resends");
       finish = TRUE;
     }
@@ -259,8 +266,8 @@ int llwrite(int fd, uchar* data, int length) {
 
 int llread(int fd, uchar* buffer) {
   if (fd < 0) return -1;
-  uchar wframe[MAX_SIZE];
-  uchar rframe[MAX_SIZE];
+  uchar wframe[SU_SIZE];
+  uchar rframe[MAX_STUF_FRAME_SIZE];
   
   uchar controls[] = {S_0, S_1};
   const int N_CONTROLS = 2;
@@ -286,23 +293,23 @@ int llread(int fd, uchar* buffer) {
     }*/
     
     uchar i_control;
-    if (control_used == sequence_number) { // new frame
+    if (control_used == ll.sequenceNumber) { // new frame
       if (rframe[frame_size-2] == get_BCC_2(rframe+DATA_BEGIN, frame_size-6)) { // bcc2 is correct
         for (int i = 0; i < frame_size - 6; i++) {
           buffer[i] = rframe[DATA_BEGIN + i];
         }
 
         i_control = (control_used+1)%2;
-        sequence_number = i_control;
+        ll.sequenceNumber = i_control;
       }
       else {
         i_control = 2+control_used;
-        sequence_number = control_used;
+        ll.sequenceNumber = control_used;
       }
     }
     else { // same frame -> discard
       i_control = (control_used+1)%2;
-      sequence_number = i_control;
+      ll.sequenceNumber = i_control;
     }
     create_su_frame(wframe, A_1, controls_to_send[i_control]);
 
@@ -318,8 +325,8 @@ int llread(int fd, uchar* buffer) {
 }
 
 int ll_close_transmitter(int fd) {
-  uchar wframe[MAX_SIZE];
-  uchar rframe[MAX_SIZE];
+  uchar wframe[SU_SIZE];
+  uchar rframe[SU_SIZE];
   uchar controls[] = {DISC};
   const int N_CONTROLS = 1;
   
@@ -335,7 +342,7 @@ int ll_close_transmitter(int fd) {
       write_frame(fd, wframe, SU_SIZE);
       log_sent("DISC", -1);
 
-      alarm(TIME_OUT);
+      alarm(ll.timeout);
       send_frame = FALSE;
     }
     read_value = read_su_frame(fd, A_2, controls, N_CONTROLS, rframe);
@@ -352,7 +359,7 @@ int ll_close_transmitter(int fd) {
       alarm(0);
       finish = TRUE; 
     }
-    else if (n_sends >= MAX_RESENDS) {
+    else if (n_sends >= ll.numTransmissions) {
       log_msg("Limit of resends reached");
       finish = TRUE;
     }
@@ -361,7 +368,8 @@ int ll_close_transmitter(int fd) {
 }
 
 int ll_close_receiver(int fd) {
-  uchar rframe[MAX_SIZE];
+  uchar wframe[SU_SIZE];
+  uchar rframe[SU_SIZE];
   uchar controls[] = {DISC};
   const unsigned int N_CONTROLS = 1;
   if (read_su_frame(fd, A_1, controls, N_CONTROLS, rframe) < 0) {
@@ -370,7 +378,6 @@ int ll_close_receiver(int fd) {
   }
   log_rcvd("DISC", -1);
 
-  uchar wframe[MAX_SIZE];
   create_su_frame(wframe, A_2, DISC);
   
   finish = FALSE;
@@ -386,7 +393,7 @@ int ll_close_receiver(int fd) {
       }
       log_sent("DISC", -1);
 
-      alarm(TIME_OUT);
+      alarm(ll.timeout);
       send_frame = FALSE;
     }
     controls[0] = UA;
@@ -396,7 +403,7 @@ int ll_close_receiver(int fd) {
       alarm(0);
       finish = TRUE; 
     }
-    else if (n_sends >= MAX_RESENDS) {
+    else if (n_sends >= ll.numTransmissions) {
       finish = TRUE;
     }
   }
