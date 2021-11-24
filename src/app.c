@@ -15,28 +15,16 @@
 static Application_layer app_layer;
 
 int parse_args(char* port, int argc, char** argv) {
-  if  (argc < 3) {
+  if (argc < 3 || argc > 4) {
     log_err("Wrong number of arguments");
     return -1;
   }
 
+
   if (strcmp(argv[1], "transmitter") == 0) {
-
-    if (argc != 4) {
-      log_err("Wrong number of arguments");
-      return -1;
-    }
-
     app_layer.status = TRANSMITTER;
   } 
-
   else if (strcmp(argv[1], "receiver") == 0) {
-
-    if (argc != 3) {
-      log_err("Wrong number of arguments");
-      return -1;
-    }
-
     app_layer.status = RECEIVER;
   }
   else {
@@ -44,12 +32,25 @@ int parse_args(char* port, int argc, char** argv) {
     return -1;
   }
 
+
   int nport = atoi(argv[2]); //atoi returns 0 even if its not a digit: if input was "//" nport would be 0 incorrectly
   if (strcmp(argv[2], "0") != 0 && strcmp(argv[2], "10") != 0 && strcmp(argv[2], "11") != 0) {
     log_err("Third argument is not a valid port");
     return -1;
   }
   snprintf(port, 12, "/dev/ttyS%d", nport);
+
+
+  if (argc == 4) 
+    strcpy(app_layer.filename, argv[3]);
+  else if (app_layer.status == RECEIVER) {
+    strcpy(app_layer.filename, "./");
+  }
+  else {
+    log_err("Wrong number of arguments");
+    return -1;
+  }
+
   return 0;
 }
 
@@ -141,9 +142,12 @@ int receiver() {
         }
         else if (packet[next_tlv] == FILE_NAME) {
           int filename_len = packet[next_tlv+1];
-          memcpy(app_layer.filename, &packet[next_tlv+2], filename_len);
-          app_layer.filename[filename_len] = '\0';
-          strcpy(app_layer.filename, "test.gif"); // TEST
+          char file_name[filename_len];
+          memcpy(file_name, &packet[next_tlv+2], filename_len);
+          file_name[filename_len] = '\0';
+          strcat(app_layer.filename, file_name);
+          //strcat(app_layer.filename, "test.gif"); // TEST
+          
           fd = open(app_layer.filename, O_WRONLY | O_CREAT, 0777);
           if (fd < 0) {
             log_err("Could not open file to be transmitted");
@@ -184,7 +188,6 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  if (argc == 4) strcpy(app_layer.filename, argv[3]);
 
 
   log_msg("Establishing connection");

@@ -6,21 +6,19 @@ void log_msg(char* s) {
 }
 
 void log_err(char* s) {
-  printf("ERROR  -  %s\n", s);
+  printf("ERR  -  %s\n", s);
 }
 
 void log_sent(char* type, int n) {
   printf("SNT  -  FRAME %s", type);
   if (n != -1)
-    printf("-%d\n", n);
-  else
-    printf("\n");
+    printf("-%d", n);
+  printf("\n");
 }
 
 void log_rcvd(char* type, int n) {
   printf("RCV  -  FRAME %s", type);
   if (n != -1)
-    printf("-%d\n", n);
-  else
-    printf("\n");
+    printf("-%d", n);
+  printf("\n");
 }

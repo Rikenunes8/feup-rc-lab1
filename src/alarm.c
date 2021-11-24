@@ -17,7 +17,7 @@ int set_alarm() {
   sigset_t smask;
 
   if (sigemptyset(&smask) == -1) {
-    log_err("sigemptyset() while setting alarm signal");
+    log_err("sigemptyset() - setting alarm signal");
     return -1;
   }
       
@@ -26,7 +26,7 @@ int set_alarm() {
   sa.sa_flags = 0;
 
   if (sigaction(SIGALRM, &sa, NULL) == -1) {
-    log_err("sigaction() while setting alarm signal");
+    log_err("sigaction() - setting alarm signal");
     return -1;
   }
   return 0;
