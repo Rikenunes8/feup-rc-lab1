@@ -20,9 +20,37 @@ typedef struct {
   int   frame_size;
 } State_machine;
 
+/**
+ * @brief Create and initialize a state machine struct
+ * 
+ * @param address Address byte to be found
+ * @param controls Set of possible control bytes to be found
+ * @param n_controls Size of controls
+ * @return State_machine* State machine to read frames
+ */
 State_machine* create_sm(uchar address, uchar* controls, int n_controls);
-void destroy_sm();
+/**
+ * @brief Free State machine
+ * 
+ * @param sm State machine to be free
+ */
+void destroy_sm(State_machine* sm);
+/**
+ * @brief Find a byte inside its expected control bytes
+ * 
+ * @param sm State machine
+ * @param byte Control byte to be find in controls
+ * @return int If byte exists in controls array, return its index, otherwise return -1
+ */
 int get_control(State_machine* sm, uchar byte);
+/**
+ * @brief Update the state machine according to its state and the byte given. Also fill frame accordingly.
+ * 
+ * @param sm State machine
+ * @param byte Byte to deal with
+ * @param frame Frame to be set
+ * @param frame_type INFORMATION/SUPERVISION/UNNUMBERED frame
+ */
 void event_handler_sm(State_machine* sm, uchar byte, uchar* frame, int frame_type);
 
 void process_start(State_machine* sm, uchar byte, int* i, uchar* frame);
