@@ -196,7 +196,6 @@ int llwrite(int fd, uchar* data, int length) {
   if (fd < 0) return -1;
   uchar wframe[MAX_STUF_FRAME_SIZE];
   uchar rframe[SU_SIZE];
-  print_frame(data, length);
   
   const int N_CONTROLS = 2;
   uchar controls[N_CONTROLS];
@@ -218,8 +217,6 @@ int llwrite(int fd, uchar* data, int length) {
   }
   int frame_size = create_info_frame(wframe, control_to_send, data, length);
   frame_size = byteStuffing(wframe, frame_size);
-  print_frame(wframe, frame_size);
-
   
   finish = FALSE;
   send_frame = TRUE;
@@ -279,7 +276,7 @@ int llread(int fd, uchar* buffer) {
   do {
     frame_size = read_info_frame(fd, A_1, controls, N_CONTROLS, rframe);
     frame_size = byteDestuffing(rframe, frame_size);
-    print_frame(rframe, frame_size);
+    // print_frame(rframe, frame_size);
 
     uchar control_used;
     if      (rframe[CNTRL_BYTE] == S_0) control_used = 0;

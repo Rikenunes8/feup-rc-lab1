@@ -10,6 +10,7 @@
 #include "app.h"
 #include "dl_protocol.h"
 #include "log.h"
+#include "aux.h"
 
 static Application_layer app_layer;
 
@@ -52,7 +53,7 @@ int buildControlPacket(uchar* packet, uchar type, off_t* size) {
   return 5 + offsize + filename_len;
 }
 
-int buildDataPacket(uchar* packet, uchar n, uchar* data, uchar data_size) {
+int buildDataPacket(uchar* packet, uchar n, uchar* data, int data_size) {
   packet[0] = PACK_DATA;
   packet[1] = n % 256;
   packet[2] = data_size / 256;
@@ -84,8 +85,8 @@ int transmitter() {
   int data_size;
   do {
     data_size = read(fd, data, MAX_DATA_SIZE);
-
     size = buildDataPacket(packet, sequence_number, data, data_size);
+
     if (llwrite(app_layer.fd, packet, size) < 0) {
       return -1; 
     }
@@ -100,7 +101,6 @@ int transmitter() {
   
 
   size = buildControlPacket(packet, PACK_END, &file_info.st_size);
-  //packet[0] = PACK_END;
   if (llwrite(app_layer.fd, packet, size) < 0) {
     return -1;
   }
@@ -109,12 +109,7 @@ int transmitter() {
 
 int receiver() {
   uchar packet[MAX_PACK_SIZE];
-  int fd = open(app_layer.filename, O_WRONLY | O_CREAT);
-  if (fd < 0) {
-    log_err("Could not open file to be transmitted");
-    return -1;
-  }
-
+  int fd = -1;
 
   while (TRUE) {
     int size = llread(app_layer.fd, packet);
@@ -135,6 +130,11 @@ int receiver() {
           memcpy(app_layer.filename, &packet[next_tlv+2], filename_len);
           app_layer.filename[filename_len] = '\0';
           strcpy(app_layer.filename, "test.gif"); // TEST
+          fd = open(app_layer.filename, O_WRONLY | O_CREAT, 0777);
+          if (fd < 0) {
+            log_err("Could not open file to be transmitted");
+            return -1;
+          }
           next_tlv += filename_len + 2;
         }
       }
@@ -178,18 +178,10 @@ int main(int argc, char** argv) {
 
   if (app_layer.status == TRANSMITTER) {
     log_msg("Transfering data");
-    /*uchar buffer[] = {0x02, 0x03, 0x04, 0x7e, 0x05};
-    llwrite(app_layer.fd, buffer, 5);*/
     transmitter();
   }
   else {
     log_msg("Receiving data");
-    /*uchar buffer[MAX_SIZE];
-    int size = llread(app_layer.fd, buffer);
-    for (int i = 0; i < size; i++) {
-      printf(":%x", buffer[i]);
-    }
-    printf("\n");*/
     receiver();
   }
   
