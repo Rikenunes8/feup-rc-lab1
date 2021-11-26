@@ -102,7 +102,7 @@ int transmitter() {
     size = buildDataPacket(packet, sequence_number, data, data_size);
 
     if (llwrite(app_layer.fd, packet, size) < 0) {
-      return -1; 
+      break;
     }
     sequence_number++;
 
@@ -127,6 +127,7 @@ int receiver() {
 
   while (TRUE) {
     int size = llread(app_layer.fd, packet);
+    
 
     if (packet[0] == PACK_START) {
       off_t filesize = 0;
@@ -160,6 +161,12 @@ int receiver() {
       break;
     }
     else if (packet[0] == PACK_DATA) {
+      if ((sn+1)%256 == packet[1]) {
+        sn = packet[1];
+      }
+      else {
+        return -1;
+      }
       int data_size = packet[2]*256 + packet[3];
       if (write(fd, &packet[4], data_size) < 0) {
         log_err("Failed to writing data bytes to the file");
@@ -191,15 +198,16 @@ int main(int argc, char** argv) {
 
   log_msg("Establishing connection");
   app_layer.fd = llopen(port, app_layer.status);
-
-
-  if (app_layer.status == TRANSMITTER) {
-    log_msg("Transfering data");
-    transmitter();
-  }
-  else {
-    log_msg("Receiving data");
-    receiver();
+    
+  if (app_layer.fd != -1) {
+    if (app_layer.status == TRANSMITTER) {
+      log_msg("Transfering data");
+      transmitter();
+    }
+    else {
+      log_msg("Receiving data");
+      receiver();
+    }
   }
   
 

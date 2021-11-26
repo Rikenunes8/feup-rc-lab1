@@ -244,11 +244,10 @@ int llwrite(int fd, uchar* data, int length) {
     else if (read_value > 0) {
       alarm(0);
       send_frame = TRUE;
-      n_sends++;
+      n_sends = 0;
       log_rcvd("REJ", ll.sequenceNumber);
     }
-    
-    if (n_sends >= ll.numTransmissions) {
+    else if (n_sends >= ll.numTransmissions) {
       log_msg("Limit of resends");
       finish = TRUE;
     }
