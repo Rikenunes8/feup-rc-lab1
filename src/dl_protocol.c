@@ -7,7 +7,7 @@
 #include "sp_config.h"
 #include "alarm.h"
 #include "state_machine.h"
-#include "aux.h"
+#include "auxiliar.h"
 #include "log.h"
 
 

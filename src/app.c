@@ -124,6 +124,8 @@ int transmitter() {
 int receiver() {
   uchar packet[MAX_PACK_SIZE];
   int fd = -1;
+  uchar sequence_number = 0;
+
 
   while (TRUE) {
     int size = llread(app_layer.fd, packet);
@@ -146,7 +148,6 @@ int receiver() {
           memcpy(file_name, &packet[next_tlv+2], filename_len);
           file_name[filename_len] = '\0';
           strcat(app_layer.filename, file_name);
-          //strcat(app_layer.filename, "test.gif"); // TEST
           
           fd = open(app_layer.filename, O_WRONLY | O_CREAT, 0777);
           if (fd < 0) {
@@ -161,10 +162,11 @@ int receiver() {
       break;
     }
     else if (packet[0] == PACK_DATA) {
-      if ((sn+1)%256 == packet[1]) {
-        sn = packet[1];
+      if ((sequence_number+1)%256 == packet[1]) {
+        sequence_number = packet[1];
       }
       else {
+        log_err("Sequence of packets received is wrong");
         return -1;
       }
       int data_size = packet[2]*256 + packet[3];
@@ -175,7 +177,7 @@ int receiver() {
       
     }
     else {
-      printf("Fail");
+      log_err("It's not receiving a packet");
     }
   }
 

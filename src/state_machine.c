@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "state_machine.h"
-#include "aux.h"
+#include "auxiliar.h"
 
 State_machine* create_sm(uchar address, uchar* controls, int n_controls) {
   State_machine* sm = malloc(sizeof(State_machine));
