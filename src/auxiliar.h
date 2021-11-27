@@ -31,7 +31,7 @@ uchar get_BCC_2(uchar* data, int length);
  * @param length Size of the frame given
  * @return int Size of the new frame
  */
-int byteStuffing(uchar* frame, int length);
+int byte_stuffing(uchar* frame, int length);
 
 /**
  * @brief Given a frame, all the data fields are destuffed. It means 0x7E replace all 0x7D5E bytes and 0x7D replace all 0x7D5D bytes on data fields (all bytes on frame but the first 4 and the last one). BCC_2 is count as a data field.
@@ -40,6 +40,6 @@ int byteStuffing(uchar* frame, int length);
  * @param length Size of the frame given
  * @return int Size of the new frame
  */
-int byteDestuffing(uchar* frame, int length);
+int byte_destuffing(uchar* frame, int length);
 
 void print_frame(uchar* frame, int length);

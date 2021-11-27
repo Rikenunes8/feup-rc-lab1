@@ -45,7 +45,7 @@ int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length)
  * @param controls Control bytes that can be accepted
  * @param n_controls Number of control bytes that can be accepted
  * @param frame Array to be set with the information read
- * @return int Size of frame or -1 on failure
+ * @return int Index of control chosen or -1 on failure
  */
 int read_su_frame(int fd, uchar address, uchar* controls, int n_controls, uchar* frame);
 /**
@@ -73,7 +73,7 @@ int write_frame(int fd, uchar* frame, unsigned size);
  * @brief 
  * 
  * @param fd 
- * @return int 
+ * @return int 0 on success or -1 on failure
  */
 int ll_open_transmitter(int fd);
 
@@ -81,7 +81,7 @@ int ll_open_transmitter(int fd);
  * @brief 
  * 
  * @param fd 
- * @return int 
+ * @return int 0 on success or -1 on failure
  */
 int ll_open_receiver(int fd);
 

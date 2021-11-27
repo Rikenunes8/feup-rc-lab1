@@ -11,7 +11,7 @@
 #include "dl_protocol.h"
 #include "log.h"
 
-static Application_layer app_layer;
+static Application_layer al;
 
 int parse_args(char* port, int argc, char** argv) {
   if (argc < 3 || argc > 4) {
@@ -21,10 +21,10 @@ int parse_args(char* port, int argc, char** argv) {
 
 
   if (strcmp(argv[1], "transmitter") == 0) {
-    app_layer.status = TRANSMITTER;
+    al.status = TRANSMITTER;
   } 
   else if (strcmp(argv[1], "receiver") == 0) {
-    app_layer.status = RECEIVER;
+    al.status = RECEIVER;
   }
   else {
     log_err("Second argument is wrong");
@@ -41,9 +41,9 @@ int parse_args(char* port, int argc, char** argv) {
 
 
   if (argc == 4) 
-    strcpy(app_layer.filename, argv[3]);
-  else if (app_layer.status == RECEIVER) {
-    strcpy(app_layer.filename, "./");
+    strcpy(al.filename, argv[3]);
+  else if (al.status == RECEIVER) {
+    strcpy(al.filename, "./");
   }
   else {
     log_err("Wrong number of arguments");
@@ -59,10 +59,10 @@ int buildControlPacket(uchar* packet, uchar type, off_t* size) {
   packet[1] = FILE_SIZE;
   packet[2] = offsize;
   memcpy(&packet[3], size, offsize);
-  uchar filename_len = (uchar)strlen(app_layer.filename);
+  uchar filename_len = (uchar)strlen(al.filename);
   packet[3+offsize] = FILE_NAME;
   packet[4+offsize] = filename_len;
-  memcpy(&packet[5+offsize], &app_layer.filename, filename_len);
+  memcpy(&packet[5+offsize], &al.filename, filename_len);
 
   return 5 + offsize + filename_len;
 }
@@ -79,7 +79,7 @@ int buildDataPacket(uchar* packet, uchar n, uchar* data, int data_size) {
 
 int transmitter() {
   int size;
-  int fd = open(app_layer.filename, O_RDONLY);
+  int fd = open(al.filename, O_RDONLY);
   if (fd < 0) {
     log_err("Could not open file to be transmitted");
     return -1;
@@ -90,7 +90,7 @@ int transmitter() {
 
   uchar packet[MAX_PACK_SIZE];
   size = buildControlPacket(packet, PACK_START, &file_info.st_size);
-  if (llwrite(app_layer.fd, packet, size) < 0) {
+  if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
 
@@ -101,7 +101,7 @@ int transmitter() {
     data_size = read(fd, data, MAX_DATA_SIZE);
     size = buildDataPacket(packet, sequence_number, data, data_size);
 
-    if (llwrite(app_layer.fd, packet, size) < 0) {
+    if (llwrite(al.fd, packet, size) < 0) {
       break;
     }
     sequence_number++;
@@ -115,7 +115,7 @@ int transmitter() {
   
 
   size = buildControlPacket(packet, PACK_END, &file_info.st_size);
-  if (llwrite(app_layer.fd, packet, size) < 0) {
+  if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
   return 0;
@@ -128,7 +128,7 @@ int receiver() {
 
 
   while (TRUE) {
-    int size = llread(app_layer.fd, packet);
+    int size = llread(al.fd, packet);
     
 
     if (packet[0] == PACK_START) {
@@ -147,9 +147,9 @@ int receiver() {
           char file_name[filename_len];
           memcpy(file_name, &packet[next_tlv+2], filename_len);
           file_name[filename_len] = '\0';
-          strcat(app_layer.filename, file_name);
+          strcat(al.filename, file_name);
           
-          fd = open(app_layer.filename, O_WRONLY | O_CREAT, 0777);
+          fd = open(al.filename, O_WRONLY | O_CREAT, 0777);
           if (fd < 0) {
             log_err("Could not open file to be transmitted");
             return -1;
@@ -162,13 +162,13 @@ int receiver() {
       break;
     }
     else if (packet[0] == PACK_DATA) {
-      if ((sequence_number+1)%256 == packet[1]) {
+      /*if ((sequence_number+1)%256 == packet[1]) {
         sequence_number = packet[1];
       }
       else {
         log_err("Sequence of packets received is wrong");
         return -1;
-      }
+      }*/
       int data_size = packet[2]*256 + packet[3];
       if (write(fd, &packet[4], data_size) < 0) {
         log_err("Failed to writing data bytes to the file");
@@ -192,30 +192,33 @@ int receiver() {
 int main(int argc, char** argv) {
   char port[12];
   if (parse_args(port, argc, argv) < 0) {
-    printf("Usage:\tapp status port\nstatus = {transmitter, receiver}\nport = {0, 10, 11}\n");
+    printf("Usage:\tapp status port path\nstatus = {transmitter, receiver}\nport = {0, 10, 11}\n");
     return -1;
   }
 
 
 
   log_msg("Establishing connection");
-  app_layer.fd = llopen(port, app_layer.status);
-    
-  if (app_layer.fd != -1) {
-    if (app_layer.status == TRANSMITTER) {
-      log_msg("Transfering data");
-      transmitter();
-    }
-    else {
-      log_msg("Receiving data");
-      receiver();
-    }
+  al.fd = llopen(port, al.status);
+  if (al.fd == -1) {
+    log_err("Unable to establishing connection");
+    log_msg("Closing");
+    return -1;
+  }
+
+  if (al.status == TRANSMITTER) {
+    log_msg("Transfering data");
+    transmitter();
+  }
+  else {
+    log_msg("Receiving data");
+    receiver();
   }
   
 
 
   log_msg("Ending connection");
-  int ret = llclose(app_layer.fd, app_layer.status);
+  int ret = llclose(al.fd, al.status);
 
   log_msg("Closing");
   return ret;

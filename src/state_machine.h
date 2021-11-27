@@ -14,7 +14,7 @@ typedef enum {
 typedef struct {
   State state;
   uchar  address;
-  uchar* controls;
+  uchar* wanted_controls;
   int   n_controls;
   int   control_chosen;
   int   frame_size;
@@ -24,11 +24,11 @@ typedef struct {
  * @brief Create and initialize a state machine struct
  * 
  * @param address Address byte to be found
- * @param controls Set of possible control bytes to be found
- * @param n_controls Size of controls
+ * @param wanted_controls Set of possible control bytes to be found
+ * @param n_controls Size of wanted_controls
  * @return State_machine* State machine to read frames
  */
-State_machine* create_sm(uchar address, uchar* controls, int n_controls);
+State_machine* create_sm(uchar address, uchar* wanted_controls, int n_controls);
 /**
  * @brief Free State machine
  * 
@@ -39,8 +39,8 @@ void destroy_sm(State_machine* sm);
  * @brief Find a byte inside its expected control bytes
  * 
  * @param sm State machine
- * @param byte Control byte to be find in controls
- * @return int If byte exists in controls array, return its index, otherwise return -1
+ * @param byte Control byte to be find in wanted_controls
+ * @return int If byte exists in wanted_controls array, return its index, otherwise return -1
  */
 int get_control(State_machine* sm, uchar byte);
 /**

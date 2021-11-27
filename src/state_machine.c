@@ -3,11 +3,11 @@
 #include "state_machine.h"
 #include "auxiliar.h"
 
-State_machine* create_sm(uchar address, uchar* controls, int n_controls) {
+State_machine* create_sm(uchar address, uchar* wanted_controls, int n_controls) {
   State_machine* sm = malloc(sizeof(State_machine));
   sm->state = START;
   sm->address = address;
-  sm->controls = controls;
+  sm->wanted_controls = wanted_controls;
   sm->n_controls = n_controls;
   sm->frame_size = 0;
   
@@ -20,7 +20,7 @@ void destroy_sm(State_machine* sm) {
 
 int get_control(State_machine* sm, uchar byte) {
   for (int j = 0; j < sm->n_controls; j++) {
-    if (sm->controls[j] == byte)
+    if (sm->wanted_controls[j] == byte)
       return j;
   }
   return -1;

@@ -1,4 +1,4 @@
-#include "aux.h"
+#include "auxiliar.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -24,7 +24,7 @@ uchar get_BCC_2(uchar* data, int length) {
 }
 
 
-int byteStuffing(uchar* frame, int length) {
+int byte_stuffing(uchar* frame, int length) {
   int finalLen = DATA_BEGIN;
 
   uchar aux[length];
@@ -49,7 +49,7 @@ int byteStuffing(uchar* frame, int length) {
 
 
 
-int byteDestuffing(uchar* frame, int length) {
+int byte_destuffing(uchar* frame, int length) {
   int finalLen = DATA_BEGIN; 
 
   uchar aux[length];

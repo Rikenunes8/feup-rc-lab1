@@ -10,14 +10,14 @@ void log_err(char* s) {
 }
 
 void log_sent(char* type, int n) {
-  printf("SNT  -  FRAME %s", type);
+  printf("SNT  -  %s", type);
   if (n != -1)
     printf("-%d", n);
   printf("\n");
 }
 
 void log_rcvd(char* type, int n) {
-  printf("RCV  -  FRAME %s", type);
+  printf("RCV  -  %s", type);
   if (n != -1)
     printf("-%d", n);
   printf("\n");
