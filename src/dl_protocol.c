@@ -407,12 +407,9 @@ int llclose(int fd, int status) {
   if (status == TRANSMITTER)
     res = ll_close_transmitter(fd);
   else if (status == RECEIVER)
-    res = ll_close_receiver(fd);
-  
-  if (res == -1)
-    log_msg("Unable to ending connection");
+    res = ll_close_receiver(fd);    
 
   close_non_canonical(fd, &oldtio);
-  return 0;
+  return res;
 }
 

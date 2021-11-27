@@ -218,8 +218,12 @@ int main(int argc, char** argv) {
 
 
   log_msg("Ending connection");
-  int ret = llclose(al.fd, al.status);
+  if (llclose(al.fd, al.status) == -1) {
+    log_msg("Unable to ending connection");
+    log_msg("Closing");
+    return -1;
+  }
 
   log_msg("Closing");
-  return ret;
+  return 0;
 }
