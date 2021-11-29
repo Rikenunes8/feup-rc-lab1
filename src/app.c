@@ -11,7 +11,7 @@
 #include "dl_protocol.h"
 #include "log.h"
 
-static Application_layer al;
+static ApplicationLayer al;
 
 int parse_args(char* port, int argc, char** argv) {
   if (argc < 3 || argc > 4) {
@@ -125,6 +125,8 @@ int receiver() {
   uchar packet[MAX_PACK_SIZE];
   int fd = -1;
   uchar sequence_number = 0;
+  off_t filesize = 0;
+  off_t new_filesize = 0;
 
 
   while (TRUE) {
@@ -132,7 +134,6 @@ int receiver() {
     
 
     if (packet[0] == PACK_START) {
-      off_t filesize = 0;
       int next_tlv = 1;
       
       while (next_tlv != size) {
@@ -162,29 +163,35 @@ int receiver() {
       break;
     }
     else if (packet[0] == PACK_DATA) {
-      /*if ((sequence_number+1)%256 == packet[1]) {
-        sequence_number = packet[1];
+      if (sequence_number%256 == packet[1]) {
+        sequence_number = (sequence_number+1)%256;
       }
       else {
         log_err("Sequence of packets received is wrong");
-        return -1;
-      }*/
-      int data_size = packet[2]*256 + packet[3];
-      if (write(fd, &packet[4], data_size) < 0) {
-        log_err("Failed to writing data bytes to the file");
-        return -1;
+        break;
       }
-      
+      int data_size = packet[2]*256 + packet[3];
+      int bytes_written = write(fd, &packet[4], data_size);
+      if (bytes_written < 0) {
+        log_err("Failed to writing data bytes to the file");
+        break;
+      }
+      new_filesize += bytes_written; 
     }
     else {
       log_err("It's not receiving a packet");
     }
   }
-
+  
   if (close(fd) < 0) {
     log_err("Fail closing file wrote");
     return -1;
   }
+  if (filesize != new_filesize) {
+    log_msg("The file was received UNSUCCESSFULLY");
+    return -1;
+  }
+  log_msg("The file was received SUCCESSFULLY");
   return 0;
 }
 

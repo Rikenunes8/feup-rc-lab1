@@ -25,32 +25,30 @@ uchar get_BCC_2(uchar* data, int length) {
 
 
 int byte_stuffing(uchar* frame, int length) {
-  int finalLen = DATA_BEGIN;
+  int final_len = DATA_BEGIN;
 
   uchar aux[length];
   memcpy(aux, frame+DATA_BEGIN, length-SU_SIZE);
 
   for (int i = 0; i < length-SU_SIZE; i++) {
     if (aux[i] == FLAG) {
-      frame[finalLen++] = ESCAPE;
-      frame[finalLen++] = FLAG_STUFFING;
+      frame[final_len++] = ESCAPE;
+      frame[final_len++] = FLAG_STUFFING;
     }
     else if (aux[i] == ESCAPE) {
-      frame[finalLen++] = ESCAPE;
-      frame[finalLen++] = ESCAPE_STUFFING;
+      frame[final_len++] = ESCAPE;
+      frame[final_len++] = ESCAPE_STUFFING;
     }
     else {
-      frame[finalLen++] = aux[i];
+      frame[final_len++] = aux[i];
     }
   }
-  frame[finalLen++] = FLAG;
-  return finalLen;
+  frame[final_len++] = FLAG;
+  return final_len;
 }
 
-
-
 int byte_destuffing(uchar* frame, int length) {
-  int finalLen = DATA_BEGIN; 
+  int final_len = DATA_BEGIN; 
 
   uchar aux[length];
   memcpy(aux, frame+DATA_BEGIN, length-SU_SIZE);
@@ -58,18 +56,18 @@ int byte_destuffing(uchar* frame, int length) {
   for (int i = 0; i < length-SU_SIZE; i++) {
     if (aux[i] == ESCAPE) {
       if (aux[i+1] == FLAG_STUFFING) {
-        frame[finalLen++] = FLAG;
+        frame[final_len++] = FLAG;
         i++;
       }
       else if(aux[i+1] == ESCAPE_STUFFING) {
-        frame[finalLen++] = ESCAPE;
+        frame[final_len++] = ESCAPE;
         i++;
       }
     }
     else {
-      frame[finalLen++] = aux[i];
+      frame[final_len++] = aux[i];
     }
   }
-  frame[finalLen++] = FLAG;
-  return finalLen;
+  frame[final_len++] = FLAG;
+  return final_len;
 } 
