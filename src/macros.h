@@ -46,6 +46,7 @@
 #define REJ_1   0x81
 #define S_0     0x00
 #define S_1     0x40
+#define BCC(x,y) x^y
 
 #define PACK_DATA  0x01
 #define PACK_START 0x02

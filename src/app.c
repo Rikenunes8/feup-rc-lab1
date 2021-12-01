@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "app.h"
-#include "dl_protocol.h"
+#include "data_link.h"
 #include "log.h"
 
 static ApplicationLayer al;

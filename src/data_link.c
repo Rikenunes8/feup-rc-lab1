@@ -1,13 +1,11 @@
 #include <termios.h>
 #include <signal.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
-#include "dl_protocol.h"
+#include "data_link.h"
 #include "sp_config.h"
 #include "alarm.h"
-#include "state_machine.h"
-#include "auxiliar.h"
+#include "data_link_aux.h"
 #include "log.h"
 
 
@@ -17,66 +15,6 @@ extern int n_sends;
 
 static struct termios oldtio;
 static LinkLayer ll;
-
-
-
-void create_su_frame(uchar* frame, uchar address, uchar control) {
-  frame[0] = FLAG;
-  frame[1] = address;
-  frame[2] = control;
-  frame[3] = get_BCC_1(frame[1], frame[2]);
-  frame[4] = FLAG;
-}
-
-int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length) {
-  frame[0] = FLAG;
-  frame[1] = A_1;
-  frame[2] = control;
-  frame[3] = get_BCC_1(frame[1], frame[2]);
-  for (int i = 0; i < data_length; i++) {
-    frame[4+i] = data[i];
-  }
-  frame[4+data_length] = get_BCC_2(data, data_length);
-  frame[4+data_length+1] = FLAG;
-
-  return 4+data_length+2;
-}
-
-int read_su_frame(int fd, uchar address, uchar* wanted_controls, int n_controls, uchar* frame) {
-  State_machine* sm = create_sm(address, wanted_controls, n_controls);
-  uchar byte;
-  while (sm->state != STOP && !finish && !send_frame) {
-    if (read(fd, &byte, sizeof(char)) > 0) {
-      event_handler_sm(sm, byte, frame, SUPERVISION);
-    }
-  }
-  int control_chosen = sm->control_chosen;
-  destroy_sm(sm);
-
-  if (finish || send_frame)
-    return -1;
-  return control_chosen;
-}
-
-int read_info_frame(int fd, uchar address, uchar* wanted_controls, int n_controls, uchar* frame) {
-  State_machine* sm = create_sm(address, wanted_controls, n_controls);
-  uchar byte;
-  while (sm->state != STOP ) {
-    if (read(fd, &byte, sizeof(char)) > 0) {
-      event_handler_sm(sm, byte, frame, INFORMATION);
-    }
-  }
-  
-  int frame_size = sm->frame_size;
-  destroy_sm(sm);
-
-  return frame_size;
-}
-
-int write_frame(int fd, uchar* frame, unsigned size) {
-  return write(fd, frame, size);
-}
-
 
 
 int ll_open_transmitter(int fd) {
@@ -277,7 +215,7 @@ int llread(int fd, uchar* buffer) {
     log_rcvd("INFO", index_control_rcvd);
     
     if (index_control_rcvd == ll.sequenceNumber) { // If new frame
-      if (rframe[frame_size-2] == get_BCC_2(rframe+DATA_BEGIN, frame_size-6)) { // If bcc2 is correct put data in buffer, choose a RR to be send and update sequence number
+      if (rframe[frame_size-2] == BCC_2(rframe+DATA_BEGIN, frame_size-6)) { // If bcc2 is correct put data in buffer, choose a RR to be send and update sequence number
         memcpy(buffer, &rframe[DATA_BEGIN], frame_size-6);
 
         index_control_to_send = (index_control_rcvd+1)%2;

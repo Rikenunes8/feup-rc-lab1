@@ -1,7 +1,5 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include "state_machine.h"
-#include "auxiliar.h"
 
 State_machine* create_sm(uchar address, uchar* wanted_controls, int n_controls) {
   State_machine* sm = malloc(sizeof(State_machine));
@@ -95,7 +93,7 @@ void process_c_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
     *i = 0;
     frame[(*i)++] = byte;   
   }
-  else if (byte == get_BCC_1(frame[ADDRS_BYTE], frame[CNTRL_BYTE])) {
+  else if (byte == (BCC(frame[ADDRS_BYTE], frame[CNTRL_BYTE]))) {
     sm->state = BCC_OK;
     frame[(*i)++] = byte;   
   }

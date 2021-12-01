@@ -3,20 +3,6 @@
 #include "macros.h"
 
 
-
-typedef struct {
-  char port[20];
-  int baudRate;
-  uchar sequenceNumber;
-  unsigned int timeout;
-  unsigned int numTransmissions;
-  uchar frame[MAX_STUF_SIZE];
-  int frame_size;
-} LinkLayer;
-
-
-
-
 /**
  * @brief Create Supervision/Unnumbered frame given the addess byte and control byte.
  * BCC_1 is calculated with address and control bytes and FLAGs are added to both edges of the frame
@@ -70,70 +56,28 @@ int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, ucha
 int write_frame(int fd, uchar* frame, unsigned size);
 
 /**
- * @brief 
+ * @brief XOR between all bytes in data
  * 
- * @param fd 
- * @return int 0 on success or -1 on failure
+ * @param data Array with bytes
+ * @param length Size of data
+ * @return uchar XOR
  */
-int ll_open_transmitter(int fd);
+uchar BCC_2(uchar* data, int length);
 
 /**
- * @brief 
+ * @brief Given a frame, all the data fields are stuffed. It means 0x7D5E replace all 0x7E bytes and 0x7D5D replace all 0x7D bytes on data fields (all bytes on frame but the first 4 and the last one). BCC_2 is count as a data field.
  * 
- * @param fd 
- * @return int 0 on success or -1 on failure
+ * @param frame Frame with current content and that will be stuffed
+ * @param length Size of the frame given
+ * @return int Size of the new frame
  */
-int ll_open_receiver(int fd);
+int byte_stuffing(uchar* frame, int length);
 
 /**
- * @brief 
+ * @brief Given a frame, all the data fields are destuffed. It means 0x7E replace all 0x7D5E bytes and 0x7D replace all 0x7D5D bytes on data fields (all bytes on frame but the first 4 and the last one). BCC_2 is count as a data field.
  * 
- * @param port Path to the port to open
- * @param status Transmissor/Receiver
- * @return int File descriptor of the port oppened or -1 on failure
+ * @param frame Frame with current content and that will be stuffed
+ * @param length Size of the frame given
+ * @return int Size of the new frame
  */
-int llopen(char* port, int status);
-
-/**
- * @brief 
- * 
- * @param fd 
- * @param buffer 
- * @param length 
- * @return int 
- */
-int llwrite(int fd, uchar* buffer, int length);
-
-/**
- * @brief 
- * 
- * @param fd 
- * @param buffer 
- * @return int 
- */
-int llread(int fd, uchar* buffer);
-
-/**
- * @brief 
- * 
- * @param fd 
- * @return int 
- */
-int ll_close_transmitter(int fd);
-
-/**
- * @brief 
- * 
- * @param fd 
- * @return int 
- */
-int ll_close_receiver(int fd);
-
-/**
- * @brief 
- * 
- * @param fd File descriptor of the file to be closed
- * @param status Transmissor/Receiver
- * @return int 0 on success and -1 on failure
- */
-int llclose(int fd, int status);
+int byte_destuffing(uchar* frame, int length);
