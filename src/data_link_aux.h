@@ -36,7 +36,7 @@ int create_info_frame(uchar* frame, uchar control, uchar* data, int data_length)
 /**
  * @brief Read Supervision/Unnumbered frame, byte by byte
  * 
- * @param fd File descriptor of the file to be read
+ * @param fd File descriptor of the serial port
  * @param address Address byte that can be acceptd
  * @param controls Control bytes that can be accepted
  * @param n_controls Number of control bytes that can be accepted
@@ -47,7 +47,7 @@ int read_su_frame(int fd, uchar address, uchar* controls, int n_controls, uchar*
 /**
  * @brief Read Information frame, byte by byte
  * 
- * @param fd File descriptor of the file to be read
+ * @param fd File descriptor of the serial port
  * @param address Address byte that can be acceptd
  * @param controls Control bytes that can be accepted
  * @param n_controls Number of control bytes that can be accepted
@@ -58,7 +58,7 @@ int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, ucha
 /**
  * @brief Write size bytes from frame on the with with the corresponding file descriptor fd.
  * 
- * @param fd File descriptor of the file to be write
+ * @param fd File descriptor of the serial port
  * @param frame Array with the information to be write
  * @param size Size of frame
  * @return int Number of bytes written or -1 on failure

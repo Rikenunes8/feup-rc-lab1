@@ -80,7 +80,7 @@ int ll_open_receiver(int fd) {
 }
 
 int llopen(char* port, int status) {
-  int fd = open_non_canonical(port, &oldtio, 0, 5);
+  int fd = open_non_canonical(port, &oldtio, 0, 1);
   if (fd < 0) {
     log_err("Openning port");
     return -1;
