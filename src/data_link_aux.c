@@ -152,10 +152,6 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
   newtio.c_cc[VTIME] = vtime; /* inter-character timer unused */
   newtio.c_cc[VMIN] = vmin; /* blocking read until vmin chars received */
 
-  /*
-  VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a
-  leitura do(s) próximo(s) caracter(es)
-  */
   tcflush(fd, TCIOFLUSH);
 
   if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
