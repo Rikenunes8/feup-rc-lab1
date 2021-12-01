@@ -3,6 +3,16 @@
 #include "macros.h"
 
 
+
+/**
+ * @brief XOR between all bytes in data
+ * 
+ * @param data Array with bytes
+ * @param length Size of data
+ * @return uchar XOR
+ */
+uchar BCC_2(uchar* data, int length);
+
 /**
  * @brief Create Supervision/Unnumbered frame given the addess byte and control byte.
  * BCC_1 is calculated with address and control bytes and FLAGs are added to both edges of the frame
@@ -56,15 +66,6 @@ int read_info_frame(int fd, uchar address, uchar* controls, int n_controls, ucha
 int write_frame(int fd, uchar* frame, unsigned size);
 
 /**
- * @brief XOR between all bytes in data
- * 
- * @param data Array with bytes
- * @param length Size of data
- * @return uchar XOR
- */
-uchar BCC_2(uchar* data, int length);
-
-/**
  * @brief Given a frame, all the data fields are stuffed. It means 0x7D5E replace all 0x7E bytes and 0x7D5D replace all 0x7D bytes on data fields (all bytes on frame but the first 4 and the last one). BCC_2 is count as a data field.
  * 
  * @param frame Frame with current content and that will be stuffed
@@ -81,3 +82,7 @@ int byte_stuffing(uchar* frame, int length);
  * @return int Size of the new frame
  */
 int byte_destuffing(uchar* frame, int length);
+
+int open_non_canonical(char* file, struct termios* oldtio, int vtime, int vmin);
+
+int close_non_canonical(int fd, struct termios* oldtio);

@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "data_link.h"
-#include "sp_config.h"
 #include "alarm.h"
 #include "data_link_aux.h"
 #include "log.h"

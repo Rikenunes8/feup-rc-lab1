@@ -5,7 +5,7 @@
 typedef struct {
   int fd; // File descriptor of the serial port*/
   int status; // TRANSMITTER | RECEIVER
-  char filename[256]; // Path to the file to be transmitted or received
+  char filename[100]; // Path to the file to be transmitted or received
 } ApplicationLayer;
 
 int parse_args(char* port, int argc, char** argv);
