@@ -76,6 +76,7 @@ int write_frame(int fd, uchar* frame, unsigned size) {
   return write(fd, frame, size);
 }
 
+
 int byte_stuffing(uchar* frame, int length) {
   int final_len = DATA_BEGIN;
 
@@ -84,12 +85,12 @@ int byte_stuffing(uchar* frame, int length) {
 
   for (int i = 0; i < length-SU_SIZE; i++) {
     if (aux[i] == FLAG) {
-      frame[final_len++] = ESCAPE;
-      frame[final_len++] = FLAG_STUFFING;
+      frame[final_len++] = ESC;
+      frame[final_len++] = FLAG_STUF;
     }
-    else if (aux[i] == ESCAPE) {
-      frame[final_len++] = ESCAPE;
-      frame[final_len++] = ESCAPE_STUFFING;
+    else if (aux[i] == ESC) {
+      frame[final_len++] = ESC;
+      frame[final_len++] = ESC_STUF;
     }
     else {
       frame[final_len++] = aux[i];
@@ -106,13 +107,13 @@ int byte_destuffing(uchar* frame, int length) {
   memcpy(aux, frame+DATA_BEGIN, length-SU_SIZE);
 
   for (int i = 0; i < length-SU_SIZE; i++) {
-    if (aux[i] == ESCAPE) {
-      if (aux[i+1] == FLAG_STUFFING) {
+    if (aux[i] == ESC) {
+      if (aux[i+1] == FLAG_STUF) {
         frame[final_len++] = FLAG;
         i++;
       }
-      else if(aux[i+1] == ESCAPE_STUFFING) {
-        frame[final_len++] = ESCAPE;
+      else if(aux[i+1] == ESC_STUF) {
+        frame[final_len++] = ESC;
         i++;
       }
     }
@@ -123,6 +124,7 @@ int byte_destuffing(uchar* frame, int length) {
   frame[final_len++] = FLAG;
   return final_len;
 } 
+
 
 int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) {
   struct termios newtio;

@@ -83,6 +83,21 @@ int byte_stuffing(uchar* frame, int length);
  */
 int byte_destuffing(uchar* frame, int length);
 
+/**
+ * @brief Open the serial port
+ * 
+ * @param file Port name
+ * @param oldtio Structure to keep the initial settings
+ * @param vtime VTIME
+ * @param vmin VMIN
+ * @return int File descriptor on success or -1 on failure
+ */
 int open_non_canonical(char* file, struct termios* oldtio, int vtime, int vmin);
-
+/**
+ * @brief Close the serial port
+ * 
+ * @param fd File descriptor of the port
+ * @param oldtio Structure with initial settings to be set
+ * @return int 0 on success or -1 on failure
+ */
 int close_non_canonical(int fd, struct termios* oldtio);

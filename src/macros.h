@@ -29,9 +29,9 @@
 #define BCC1_BYTE  3 
 #define DATA_BEGIN 4
 
-#define ESCAPE  0x7D
-#define FLAG_STUFFING 0x5E
-#define ESCAPE_STUFFING 0x5D
+#define ESC  0x7D
+#define FLAG_STUF 0x5E
+#define ESC_STUF 0x5D
 
 
 #define FLAG    0x7E

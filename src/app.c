@@ -127,6 +127,7 @@ int receiver() {
   uchar sequence_number = 0;
   off_t filesize = 0;
   off_t new_filesize = 0;
+  int transmitting_data = FALSE;
 
 
   while (TRUE) {
@@ -134,6 +135,7 @@ int receiver() {
     
 
     if (packet[0] == PACK_START) {
+      transmitting_data = TRUE;
       int next_tlv = 1;
       
       while (next_tlv != size) {
@@ -162,7 +164,7 @@ int receiver() {
     else if (packet[0] == PACK_END) {
       break;
     }
-    else if (packet[0] == PACK_DATA) {
+    else if (packet[0] == PACK_DATA && transmitting_data) {
       if (sequence_number%256 == packet[1]) {
         sequence_number = (sequence_number+1)%256;
       }
@@ -179,7 +181,7 @@ int receiver() {
       new_filesize += bytes_written; 
     }
     else {
-      log_err("It's not receiving a packet");
+      log_err("Not receiving a valid packet");
     }
   }
   
