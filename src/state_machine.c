@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "state_machine.h"
+#include "macros_dl.h"
 
 State_machine* create_sm(uchar address, uchar* wanted_controls, int n_controls) {
   State_machine* sm = malloc(sizeof(State_machine));

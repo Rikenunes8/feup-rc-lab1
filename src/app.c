@@ -11,6 +11,15 @@
 #include "data_link.h"
 #include "log.h"
 
+#define PACK_DATA  0x01
+#define PACK_START 0x02
+#define PACK_END   0x03
+
+#define FILE_SIZE 0x00
+#define FILE_NAME 0x01
+#define MAX_DATA_SIZE (-4 + MAX_SIZE)
+
+
 static ApplicationLayer al;
 
 int parse_args(char* port, int argc, char** argv) {
@@ -89,7 +98,7 @@ int transmitter() {
   off_t filesize = file_info.st_size;
 
   int size;
-  uchar packet[MAX_PACK_SIZE];
+  uchar packet[MAX_SIZE];
 
   size = buildControlPacket(packet, PACK_START, filesize);
   if (llwrite(al.fd, packet, size) < 0) {
@@ -126,7 +135,7 @@ int transmitter() {
 }
 
 int receiver() {
-  uchar packet[MAX_PACK_SIZE];
+  uchar packet[MAX_SIZE];
   int fd = -1;
   uchar sequence_number = 0;
   off_t filesize = 0;

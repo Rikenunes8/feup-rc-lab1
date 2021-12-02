@@ -2,6 +2,7 @@
 
 #include "macros.h"
 
+
 typedef struct {
   int fd; // File descriptor of the serial port*/
   int status; // TRANSMITTER | RECEIVER
