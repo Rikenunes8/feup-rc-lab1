@@ -31,6 +31,6 @@ void log_rcvd(char* type, int n);
  * 
  * @param part Current progression of bytes sent/received
  * @param total Total bytes to be sent/received
- * @param role 0 to transmitter or 1 to receiver
+ * @param status 0 to transmitter or 1 to receiver
  */
-void log_progression(long part, long total, int role);
+void log_progression(long part, long total, int status);

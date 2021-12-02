@@ -23,8 +23,8 @@ void log_rcvd(char* type, int n) {
   printf("\n");
 }
 
-void log_progression(long part, long total, int role) {
-  if (role == 0) {
+void log_progression(long part, long total, int status) {
+  if (status == 0) {
     printf("MSG  -  %ld / %ld bytes sent\n", part, total);
   }
   else {
