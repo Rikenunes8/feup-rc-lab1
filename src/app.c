@@ -53,12 +53,12 @@ int parse_args(char* port, int argc, char** argv) {
   return 0;
 }
 
-int buildControlPacket(uchar* packet, uchar type, off_t* size) {
+int buildControlPacket(uchar* packet, uchar type, off_t size) {
   uchar offsize = (uchar)sizeof(off_t);
   packet[0] = type;
   packet[1] = FILE_SIZE;
   packet[2] = offsize;
-  memcpy(&packet[3], size, offsize);
+  memcpy(&packet[3], &size, offsize);
   uchar filename_len = (uchar)strlen(al.filename);
   packet[3+offsize] = FILE_NAME;
   packet[4+offsize] = filename_len;
@@ -78,18 +78,20 @@ int buildDataPacket(uchar* packet, uchar n, uchar* data, int data_size) {
 }
 
 int transmitter() {
-  int size;
   int fd = open(al.filename, O_RDONLY);
   if (fd < 0) {
-    log_err("Could not open file to be transmitted");
+    log_err("Fail openning file to be transmitted");
     return -1;
   }
 
   struct stat file_info;
   fstat(fd, &file_info);
+  off_t filesize = file_info.st_size;
 
+  int size;
   uchar packet[MAX_PACK_SIZE];
-  size = buildControlPacket(packet, PACK_START, &file_info.st_size);
+
+  size = buildControlPacket(packet, PACK_START, filesize);
   if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
@@ -97,6 +99,7 @@ int transmitter() {
   uchar sequence_number = 0;
   uchar data[MAX_DATA_SIZE];
   int data_size;
+  off_t all_data_read = 0;
   do {
     data_size = read(fd, data, MAX_DATA_SIZE);
     size = buildDataPacket(packet, sequence_number, data, data_size);
@@ -104,17 +107,18 @@ int transmitter() {
     if (llwrite(al.fd, packet, size) < 0) {
       break;
     }
-    sequence_number++;
 
-  } while (data_size == MAX_DATA_SIZE);
+    all_data_read += data_size;
+    log_progression(all_data_read, filesize, TRANSMITTER);
+
+    sequence_number++;
+  } while (data_size == MAX_DATA_SIZE && all_data_read != filesize);
   
   if (close(fd) < 0) {
     log_err("Fail closing file was transmitted");
-    return -1;
   }
   
-
-  size = buildControlPacket(packet, PACK_END, &file_info.st_size);
+  size = buildControlPacket(packet, PACK_END, filesize);
   if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
@@ -137,24 +141,27 @@ int receiver() {
     if (packet[0] == PACK_START) {
       transmitting_data = TRUE;
       int next_tlv = 1;
-      
+
       while (next_tlv != size) {
+        int index_l = next_tlv+1;
+        int index_v = next_tlv+2;
+        
         if (packet[next_tlv] == FILE_SIZE) {
-          for (int i = next_tlv+2; i < next_tlv+2+packet[next_tlv+1]; i++) {
-            filesize += packet[i] << (8*(i-(next_tlv+2)));
+          for (int i = 0; i < packet[index_l]; i++) {
+            filesize += packet[index_v + i] << (8*i);
           }
-          next_tlv += packet[next_tlv+1]+2;
+          next_tlv += packet[index_l]+2;
         }
         else if (packet[next_tlv] == FILE_NAME) {
-          int filename_len = packet[next_tlv+1];
+          int filename_len = packet[index_l];
           char file_name[filename_len];
-          memcpy(file_name, &packet[next_tlv+2], filename_len);
+          memcpy(file_name, &packet[index_v], filename_len);
           file_name[filename_len] = '\0';
           strcat(al.filename, file_name);
           
           fd = open(al.filename, O_WRONLY | O_CREAT, 0777);
           if (fd < 0) {
-            log_err("Could not open file to be transmitted");
+            log_err("Fail openning file to be wrote");
             return -1;
           }
           next_tlv += filename_len + 2;
@@ -166,19 +173,22 @@ int receiver() {
     }
     else if (packet[0] == PACK_DATA && transmitting_data) {
       if (sequence_number%256 == packet[1]) {
-        sequence_number = (sequence_number+1)%256;
+        sequence_number++;
       }
       else {
         log_err("Sequence of packets received is wrong");
         break;
       }
+
       int data_size = packet[2]*256 + packet[3];
       int bytes_written = write(fd, &packet[4], data_size);
       if (bytes_written < 0) {
         log_err("Failed to writing data bytes to the file");
         break;
       }
-      new_filesize += bytes_written; 
+
+      new_filesize += bytes_written;
+      log_progression(new_filesize, filesize, RECEIVER);
     }
     else {
       log_err("Not receiving a valid packet");
@@ -187,8 +197,8 @@ int receiver() {
   
   if (close(fd) < 0) {
     log_err("Fail closing file wrote");
-    return -1;
   }
+
   if (filesize != new_filesize) {
     log_msg("The file was received UNSUCCESSFULLY");
     return -1;

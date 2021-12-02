@@ -26,7 +26,7 @@ int parse_args(char* port, int argc, char** argv);
  * @param size Size of the file to be transmitted in bytes
  * @return int Size of the packet
  */
-int buildControlPacket(uchar* packet, uchar type, off_t* size);
+int buildControlPacket(uchar* packet, uchar type, off_t size);
 
 /**
  * @brief Create a data packet
