@@ -1,4 +1,4 @@
-COMMON_C = src/alarm.c src/app.c src/data_link_aux.c src/data_link.c src/log.c src/state_machine.c
+COMMON_C = src/alarm.c src/app.c src/data_link_aux.c src/data_link.c src/log.c src/state_machine.c src/efficiency.c
 
 all: app
 

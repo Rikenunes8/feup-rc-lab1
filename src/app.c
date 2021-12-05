@@ -10,6 +10,8 @@
 #include "app.h"
 #include "data_link.h"
 #include "log.h"
+#include "efficiency.h" // EFFICIENCY TEST
+
 
 #define PACK_DATA  0x01
 #define PACK_START 0x02
@@ -21,6 +23,7 @@
 
 
 static ApplicationLayer al;
+
 
 int parse_args(char* port, int argc, char** argv) {
   if (argc < 3 || argc > 4) {
@@ -142,7 +145,7 @@ int receiver() {
   off_t new_filesize = 0;
   int transmitting_data = FALSE;
 
-
+  if (EFFICIENCY_TEST) start_time();
   while (TRUE) {
     int size = llread(al.fd, packet);
     
@@ -212,6 +215,8 @@ int receiver() {
     log_msg("The file was received UNSUCCESSFULLY");
     return -1;
   }
+  if (EFFICIENCY_TEST) {double ms = ellapsed_time_ms(); log_time_ms(ms); log_datarate(al.filesize, ms);}
+
   log_msg("The file was received SUCCESSFULLY");
   return 0;
 }

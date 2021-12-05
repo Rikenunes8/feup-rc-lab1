@@ -40,7 +40,4 @@
 #define MAX_FRAME_SIZE (1 + MAX_SIZE + SU_SIZE)
 #define MAX_STUF_FRAME_SIZE (2 * (1 + MAX_SIZE) + SU_SIZE)
 
-// Eficiency tests
-#define EFFICIENCY_TEST 1
-#define FER       2
-#define T_PROP    0
+

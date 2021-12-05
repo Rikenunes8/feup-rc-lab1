@@ -8,7 +8,7 @@
 #define TRANSMITTER 0
 #define RECEIVER    1
 
-#define MAX_SIZE 256
+#define MAX_SIZE 1024
 
 
 typedef unsigned char uchar;

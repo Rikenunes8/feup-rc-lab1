@@ -5,9 +5,9 @@
 #include "state_machine.h"
 #include "log.h"
 #include "macros_dl.h"
+#include "efficiency.h" // EFFICIENCY TEST
 
-#include <time.h> // EFFICIENCY TEST
-#include <stdlib.h> // EFFICIENCY TEST
+
 
 
 extern int finish;
@@ -184,26 +184,3 @@ int close_non_canonical(int fd, struct termios* oldtio) {
   return 0;
 }
 
-// ----------------- EFFICIENCY TEST -----------------------
-
-uchar generate_error_BCC(uchar byte, int bcc) {
-  int prob = (rand()%100) + 1;
-  if (prob <= FER) {
-    log_bcc_error(bcc);
-    byte = rand()%256;
-  }
-  return byte;
-}
-
-void start_time(struct timespec *start_time){
-  clock_gettime(CLOCK_MONOTONIC, start_time);
-}
-
-double ellapsed_time_ms(struct timespec start_time) {
-  struct timespec current_time;
-  clock_gettime(CLOCK_MONOTONIC, &current_time);
-  double elapsed = (current_time.tv_sec-start_time.tv_sec)*1000+((current_time.tv_nsec-start_time.tv_nsec)/10e6);
-  return elapsed;
-}
-
-// ---------------------------------------------------------

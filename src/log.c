@@ -33,7 +33,8 @@ void log_progression(long part, long total, int status) {
 
 }
 
-// EFFICIENCY TEST
+// --------- EFFICIENCY TEST -----------
+
 void log_bcc_error(int bcc) {
   char text[30];
   sprintf(text, "Generate BCC_%d error", bcc);
@@ -45,6 +46,9 @@ void log_time_ms(double time_ms) {
 }
 
 void log_datarate(double nbytes, double time_ms) {
-  double bits = (nbytes*8) / (time_ms/1000);
+  printf("%f   %f\n", nbytes, time_ms);
+  double bits = (nbytes) / (time_ms/1000);
   printf("R    -  %f bits/s \n", bits);
 }
+
+// -----------------------------------

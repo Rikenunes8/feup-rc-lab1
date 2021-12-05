@@ -36,6 +36,8 @@ void log_rcvd(char* type, int n);
 void log_progression(long part, long total, int status);
 
 
+// --------- EFFICIENCY TEST -----------
+
 /**
  * @brief Print a message to report a bcc error manually generated
  * 
@@ -47,4 +49,4 @@ void log_time_ms(double time_ms);
 
 void log_datarate(double nbytes, double time_ms);
 
-
+// -----------------------------------

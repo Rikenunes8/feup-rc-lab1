@@ -2,7 +2,7 @@
 #include "state_machine.h"
 #include "macros_dl.h"
 
-#include "data_link_aux.h" // EFFICIENCY TEST
+#include "efficiency.h" // EFFICIENCY TEST
 
 State_machine* create_sm(uchar address, uchar* wanted_controls, int n_controls) {
   State_machine* sm = malloc(sizeof(State_machine));

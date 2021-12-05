@@ -7,6 +7,8 @@
 #include "data_link_aux.h"
 #include "log.h"
 #include "macros_dl.h"
+#include "efficiency.h" // EFFICIENCY TEST
+
 
 
 extern int finish;
@@ -15,9 +17,6 @@ extern int n_sends;
 
 static struct termios oldtio;
 static LinkLayer ll;
-
-static struct timespec time; // EFFICIENCY TEST
-
 
 
 int ll_open_transmitter(int fd) {
@@ -207,9 +206,7 @@ int llread(int fd, uchar* buffer) {
   int frame_size;
 
   do {
-    if (EFFICIENCY_TEST) start_time(&time);
     frame_size = read_info_frame(fd, A_1, wanted_controls, N_CONTROLS, rframe);
-    if (EFFICIENCY_TEST) {double ms = ellapsed_time_ms(time); log_time_ms(ms);log_datarate(MAX_FRAME_SIZE, ms);}
     frame_size = byte_destuffing(rframe, frame_size);
 
     if      (rframe[CNTRL_BYTE] == S_0) index_control_rcvd = 0;
