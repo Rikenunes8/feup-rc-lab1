@@ -92,7 +92,7 @@ int byte_destuffing(uchar* frame, int length);
  * @param vmin VMIN
  * @return int File descriptor on success or -1 on failure
  */
-int open_non_canonical(char* file, struct termios* oldtio, int vtime, int vmin);
+int open_non_canonical(char* file, struct termios* oldtio, int baudrate, int vtime, int vmin);
 /**
  * @brief Close the serial port
  * 

@@ -47,7 +47,7 @@ int ll_open_transmitter(int fd) {
     }
     else {
       log_err("Fail reading UA frame");
-      if (n_sends >= ll.numTransmissions) {
+      if (n_sends >= ll.n_transmissions) {
         log_msg("Limit of resends reached");
         return -1;
       }
@@ -81,23 +81,22 @@ int ll_open_receiver(int fd) {
 }
 
 int llopen(char* port, int status) {
-  int fd = open_non_canonical(port, &oldtio, 0, 0);
+  strcpy(ll.port, port);
+  ll.baudrate = BAUDRATE;
+  ll.sequence_number = 0x00;
+  ll.timeout = TIME_OUT;
+  ll.n_transmissions = MAX_RESENDS;
+
+  if (set_alarm() < 0) {
+    log_err("Setting alarm");
+    return -1;
+  }
+  
+  int fd = open_non_canonical(port, &oldtio, ll.baudrate, 0, 0);
   if (fd < 0) {
     log_err("Openning port");
     return -1;
   }
-  if (set_alarm() < 0) {
-    log_err("Setting alarm");
-    close_non_canonical(fd, &oldtio);
-    return -1;
-  }
-
-  
-  strcpy(ll.port, port);
-  ll.baudRate = BAUDRATE;
-  ll.sequenceNumber = 0x00;
-  ll.timeout = TIME_OUT;
-  ll.numTransmissions = MAX_RESENDS;
   
 
   int res;
@@ -109,8 +108,7 @@ int llopen(char* port, int status) {
   }
   else {
     log_err("Wrong status");
-    close_non_canonical(fd, &oldtio);
-    return -1;
+    res = -1;
   }
 
   if (res < 0) {
@@ -133,12 +131,12 @@ int llwrite(int fd, uchar* data, int length) {
   uchar wanted_controls[N_CONTROLS];
   uchar control_to_send;
 
-  if (ll.sequenceNumber%2 == 0) {
+  if (ll.sequence_number%2 == 0) {
     control_to_send = S_0;
     wanted_controls[0] = RR_1;
     wanted_controls[1] = REJ_0;
   }
-  else if (ll.sequenceNumber%2 == 1) {
+  else if (ll.sequence_number%2 == 1) {
     control_to_send = S_1;
     wanted_controls[0] = RR_0;
     wanted_controls[1] = REJ_1;
@@ -157,7 +155,7 @@ int llwrite(int fd, uchar* data, int length) {
         log_err("Fail sending INFO frame");
         return -1;
       }
-      log_sent("INFO", ll.sequenceNumber);
+      log_sent("INFO", ll.sequence_number);
 
       alarm(ll.timeout);
       send_frame = FALSE;
@@ -168,18 +166,18 @@ int llwrite(int fd, uchar* data, int length) {
       alarm(0);
       finish = TRUE; 
       
-      ll.sequenceNumber = (ll.sequenceNumber+1)%2;
-      log_rcvd("RR", ll.sequenceNumber);
+      ll.sequence_number = (ll.sequence_number+1)%2;
+      log_rcvd("RR", ll.sequence_number);
     }
     else if (res == 1) {
       alarm(0);
       send_frame = TRUE;
       n_sends = 0;
-      log_rcvd("REJ", ll.sequenceNumber);
+      log_rcvd("REJ", ll.sequence_number);
     }
     else {
       log_err("Fail reading RR/REJ frame");
-      if (n_sends >= ll.numTransmissions) {
+      if (n_sends >= ll.n_transmissions) {
         log_msg("Limit of resends reached");
         return -1;
       }
@@ -214,21 +212,21 @@ int llread(int fd, uchar* buffer) {
 
     log_rcvd("INFO", index_control_rcvd);
     
-    if (index_control_rcvd == ll.sequenceNumber) { // If new frame
+    if (index_control_rcvd == ll.sequence_number) { // If new frame
       if (rframe[frame_size-2] == BCC_2(rframe+DATA_BEGIN, frame_size-6)) { // If bcc2 is correct put data in buffer, choose a RR to be send and update sequence number
         memcpy(buffer, &rframe[DATA_BEGIN], frame_size-6);
 
         index_control_to_send = (index_control_rcvd+1)%2;
-        ll.sequenceNumber = index_control_to_send;
+        ll.sequence_number = index_control_to_send;
       }
       else {  // Else keep sequence number and choose a REJ to be send
         index_control_to_send = 2+index_control_rcvd;
-        ll.sequenceNumber = index_control_rcvd;
+        ll.sequence_number = index_control_rcvd;
       }
     }
     else { // If frame was previously received successfully -> Discard data, choose a RR to be send and update sequence number
       index_control_to_send = (index_control_rcvd+1)%2;
-      ll.sequenceNumber = index_control_to_send;
+      ll.sequence_number = index_control_to_send;
     }
 
     create_su_frame(wframe, A_1, controls_to_send[index_control_to_send]);
@@ -281,7 +279,7 @@ int ll_close_transmitter(int fd) {
     }
     else {
       log_err("Fail reading DISC frame");
-      if (n_sends >= ll.numTransmissions) {
+      if (n_sends >= ll.n_transmissions) {
         log_msg("Limit of resends reached");
         return -1;
       }
@@ -327,7 +325,7 @@ int ll_close_receiver(int fd) {
     }
     else {
       log_err("Fail reading UA frame");
-      if (n_sends >= ll.numTransmissions) {
+      if (n_sends >= ll.n_transmissions) {
         log_msg("Limit of resends reached");
         return -1;
       }

@@ -126,7 +126,7 @@ int byte_destuffing(uchar* frame, int length) {
 } 
 
 
-int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) {
+int open_non_canonical(char* file, struct termios *oldtio, int baudrate, int vtime, int vmin) {
   struct termios newtio;
 
   int fd = open(file, O_RDWR | O_NOCTTY );
@@ -142,7 +142,7 @@ int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) 
 
   
   bzero(&newtio, sizeof(newtio));
-  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+  newtio.c_cflag = baudrate | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
   newtio.c_oflag = 0;
 

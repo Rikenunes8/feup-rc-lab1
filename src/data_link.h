@@ -5,10 +5,10 @@
 
 typedef struct {
   char port[20];
-  int baudRate;
-  uchar sequenceNumber;
+  int baudrate;
+  uchar sequence_number;
   unsigned int timeout;
-  unsigned int numTransmissions;
+  unsigned int n_transmissions;
 } LinkLayer;
 
 
