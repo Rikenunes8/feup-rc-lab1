@@ -7,6 +7,7 @@ typedef struct {
   int fd; // File descriptor of the serial port*/
   int status; // TRANSMITTER | RECEIVER
   char filename[100]; // Path to the file to be transmitted or received
+  off_t filesize; // Size of the file to be transmitted or received
 } ApplicationLayer;
 
 /**
@@ -24,10 +25,9 @@ int parse_args(char* port, int argc, char** argv);
  * 
  * @param packet Array to be set with the packet's bytes
  * @param type START/END (0x02/0x03) byte, meaning the start or the end of data transmisson, respectivelly
- * @param size Size of the file to be transmitted in bytes
  * @return int Size of the packet
  */
-int buildControlPacket(uchar* packet, uchar type, off_t size);
+int buildControlPacket(uchar* packet, uchar type);
 
 /**
  * @brief Create a data packet

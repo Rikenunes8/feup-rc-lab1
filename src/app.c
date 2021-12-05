@@ -62,12 +62,12 @@ int parse_args(char* port, int argc, char** argv) {
   return 0;
 }
 
-int buildControlPacket(uchar* packet, uchar type, off_t size) {
+int buildControlPacket(uchar* packet, uchar type) {
   uchar offsize = (uchar)sizeof(off_t);
   packet[0] = type;
   packet[1] = FILE_SIZE;
   packet[2] = offsize;
-  memcpy(&packet[3], &size, offsize);
+  memcpy(&packet[3], &al.filesize, offsize);
   uchar filename_len = (uchar)strlen(al.filename);
   packet[3+offsize] = FILE_NAME;
   packet[4+offsize] = filename_len;
@@ -95,12 +95,12 @@ int transmitter() {
 
   struct stat file_info;
   fstat(fd, &file_info);
-  off_t filesize = file_info.st_size;
+  al.filesize = file_info.st_size;
 
   int size;
   uchar packet[MAX_SIZE];
 
-  size = buildControlPacket(packet, PACK_START, filesize);
+  size = buildControlPacket(packet, PACK_START);
   if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
@@ -118,16 +118,16 @@ int transmitter() {
     }
 
     all_data_read += data_size;
-    log_progression(all_data_read, filesize, TRANSMITTER);
+    log_progression(all_data_read, al.filesize, TRANSMITTER);
 
     sequence_number++;
-  } while (data_size == MAX_DATA_SIZE && all_data_read != filesize);
+  } while (data_size == MAX_DATA_SIZE && all_data_read != al.filesize);
   
   if (close(fd) < 0) {
     log_err("Fail closing file was transmitted");
   }
   
-  size = buildControlPacket(packet, PACK_END, filesize);
+  size = buildControlPacket(packet, PACK_END);
   if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
@@ -138,7 +138,7 @@ int receiver() {
   uchar packet[MAX_SIZE];
   int fd = -1;
   uchar sequence_number = 0;
-  off_t filesize = 0;
+  al.filesize = 0;
   off_t new_filesize = 0;
   int transmitting_data = FALSE;
 
@@ -157,7 +157,7 @@ int receiver() {
         
         if (packet[next_tlv] == FILE_SIZE) {
           for (int i = 0; i < packet[index_l]; i++) {
-            filesize += packet[index_v + i] << (8*i);
+            al.filesize += packet[index_v + i] << (8*i);
           }
           next_tlv += packet[index_l]+2;
         }
@@ -197,7 +197,7 @@ int receiver() {
       }
 
       new_filesize += bytes_written;
-      log_progression(new_filesize, filesize, RECEIVER);
+      log_progression(new_filesize, al.filesize, RECEIVER);
     }
     else {
       log_err("Not receiving a valid packet");
@@ -208,7 +208,7 @@ int receiver() {
     log_err("Fail closing file wrote");
   }
 
-  if (filesize != new_filesize) {
+  if (al.filesize != new_filesize) {
     log_msg("The file was received UNSUCCESSFULLY");
     return -1;
   }
@@ -243,8 +243,6 @@ int main(int argc, char** argv) {
     receiver();
   }
   
-
-
   log_msg("Ending connection");
   if (llclose(al.fd, al.status) == -1) {
     log_msg("Unable to ending connection");
