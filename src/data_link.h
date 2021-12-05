@@ -38,7 +38,7 @@ int ll_open_receiver(int fd);
 int llopen(char* port, int status);
 
 /**
- * @brief Create INFORMATION frame with data received, apply byte stuffing, send the frame by the serial port and wait for a answer from receiver. If the answer is a REJ then resend the information frame, if it is a RR then ends. Resend information frame for a maximum value of times and it has a time out when no answer is received from receiver.
+ * @brief Create INFORMATION frame with data received, apply byte stuffing, send the frame by the serial port and wait for an answer from receiver. If the answer is a REJ then resend the information frame, if it is a RR then ends. Resend information frame for a maximum value of times and it has a time out when no answer is received from receiver.
  * 
  * @param fd File descriptor of the serial port
  * @param data Array with the data to be send 
@@ -48,7 +48,7 @@ int llopen(char* port, int status);
 int llwrite(int fd, uchar* data, int length);
 
 /**
- * @brief 
+ * @brief Read INFORMATION frame, apply byte destuffing, check BCC and sequence number in order to choose the answer to send and send the answer. If the answer was a REJ then wait to read another frame else if it was a RR return
  * 
  * @param fd File descriptor of the serial port
  * @param buffer Array to be set with the data received after parsing it
