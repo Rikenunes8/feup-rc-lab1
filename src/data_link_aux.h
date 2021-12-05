@@ -1,6 +1,8 @@
 #pragma once
 
+#include <termios.h>
 #include "macros.h"
+
 
 
 
@@ -101,3 +103,21 @@ int open_non_canonical(char* file, struct termios* oldtio, int baudrate, int vti
  * @return int 0 on success or -1 on failure
  */
 int close_non_canonical(int fd, struct termios* oldtio);
+
+
+// EFFICIENCY TEST
+
+/**
+ * @brief Produce a random uchar with a probability of FER defined in macros_dl.h
+ * 
+ * @param byte Original byte
+ * @param bcc Number of BCC where is generating the error
+ * @return uchar Random byte with a probabbility of FER, otherwise returns the original byte
+ */
+uchar generate_error_BCC(uchar byte, int bcc);
+
+void start_time(struct timespec *start_time);
+
+double ellapsed_time_ms(struct timespec start_time);
+
+// ----------------------

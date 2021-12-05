@@ -2,7 +2,8 @@
 
 #include "macros.h"
 
-#define BAUDRATE B38400
+//#define BAUDRATE B38400
+#define BAUDRATE B19200
 
 #define INFORMATION 0
 #define SUPERVISION 1
@@ -36,4 +37,10 @@
 #define BCC(x,y) x^y
 
 #define SU_SIZE 5
-#define MAX_STUF_FRAME_SIZE (1 + (2 * MAX_SIZE) + SU_SIZE)
+#define MAX_FRAME_SIZE (1 + MAX_SIZE + SU_SIZE)
+#define MAX_STUF_FRAME_SIZE (2 * (1 + MAX_SIZE) + SU_SIZE)
+
+// Eficiency tests
+#define EFFICIENCY_TEST 1
+#define FER       2
+#define T_PROP    0

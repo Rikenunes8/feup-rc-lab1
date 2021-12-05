@@ -2,6 +2,8 @@
 #include "state_machine.h"
 #include "macros_dl.h"
 
+#include "data_link_aux.h" // EFFICIENCY TEST
+
 State_machine* create_sm(uchar address, uchar* wanted_controls, int n_controls) {
   State_machine* sm = malloc(sizeof(State_machine));
   sm->state = START;
@@ -89,6 +91,8 @@ void process_a_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
 }
 
 void process_c_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
+  if (EFFICIENCY_TEST) byte = generate_error_BCC(byte, 1);
+  
   if (byte == FLAG) {
     sm->state = FLAG_RCV;
     *i = 0;

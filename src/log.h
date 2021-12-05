@@ -34,3 +34,17 @@ void log_rcvd(char* type, int n);
  * @param status 0 to transmitter or 1 to receiver
  */
 void log_progression(long part, long total, int status);
+
+
+/**
+ * @brief Print a message to report a bcc error manually generated
+ * 
+ * @param bcc 1 to BCC_1 or 2 to BCC_2
+ */
+void log_bcc_error(int bcc);
+
+void log_time_ms(double time_ms);
+
+void log_datarate(double nbytes, double time_ms);
+
+
