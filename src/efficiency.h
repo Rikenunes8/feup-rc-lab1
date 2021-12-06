@@ -22,6 +22,6 @@ uchar generate_error_BCC(uchar byte, int bcc);
 
 void start_time();
 
-double ellapsed_time_ms();
+double elapsed_time_ms();
 
 // ---------------------------------------------------------

@@ -94,7 +94,7 @@ int llopen(char* port, int status) {
     return -1;
   }
   
-  int fd = open_non_canonical(port, &oldtio, ll.baudrate, 0, 0);
+  int fd = open_non_canonical(port, &oldtio, ll.baudrate, 1, 0);
   if (fd < 0) {
     log_err("Openning port");
     return -1;
@@ -206,7 +206,10 @@ int llread(int fd, uchar* buffer) {
   int frame_size;
 
   do {
+    if (EFFICIENCY_TEST) start_time();
     frame_size = read_info_frame(fd, A_1, wanted_controls, N_CONTROLS, rframe);
+    if (EFFICIENCY_TEST) {double ms = elapsed_time_ms(); log_time_ms(ms); log_datarate(frame_size, ms);}
+
     frame_size = byte_destuffing(rframe, frame_size);
 
     if      (rframe[CNTRL_BYTE] == S_0) index_control_rcvd = 0;

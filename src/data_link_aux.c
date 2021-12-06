@@ -7,9 +7,6 @@
 #include "macros_dl.h"
 #include "efficiency.h" // EFFICIENCY TEST
 
-
-
-
 extern int finish;
 extern int send_frame;
 

@@ -48,7 +48,7 @@ void log_time_ms(double time_ms) {
 void log_datarate(double nbytes, double time_ms) {
   printf("%f   %f\n", nbytes, time_ms);
   double bits = (nbytes) / (time_ms/1000);
-  printf("R    -  %f bits/s \n", bits);
+  printf("R    -  %0.1f bits/s \n", bits);
 }
 
 // -----------------------------------

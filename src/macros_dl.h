@@ -2,8 +2,7 @@
 
 #include "macros.h"
 
-//#define BAUDRATE B38400
-#define BAUDRATE B19200
+#define BAUDRATE B38400
 
 #define INFORMATION 0
 #define SUPERVISION 1

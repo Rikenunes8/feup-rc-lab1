@@ -145,7 +145,6 @@ int receiver() {
   off_t new_filesize = 0;
   int transmitting_data = FALSE;
 
-  if (EFFICIENCY_TEST) start_time();
   while (TRUE) {
     int size = llread(al.fd, packet);
     
@@ -215,7 +214,6 @@ int receiver() {
     log_msg("The file was received UNSUCCESSFULLY");
     return -1;
   }
-  if (EFFICIENCY_TEST) {double ms = ellapsed_time_ms(); log_time_ms(ms); log_datarate(al.filesize, ms);}
 
   log_msg("The file was received SUCCESSFULLY");
   return 0;

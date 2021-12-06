@@ -13,7 +13,8 @@ void alarm_handler() {
 }
 
 int set_alarm() {
-  struct sigaction sa;
+  signal(SIGALRM, alarm_handler);
+  /*struct sigaction sa;
   sigset_t smask;
 
   if (sigemptyset(&smask) == -1) {
@@ -28,6 +29,6 @@ int set_alarm() {
   if (sigaction(SIGALRM, &sa, NULL) == -1) {
     log_err("sigaction() - setting alarm signal");
     return -1;
-  }
+  }*/
   return 0;
 }
