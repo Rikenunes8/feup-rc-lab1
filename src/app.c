@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include "app.h"
 #include "data_link.h"
 #include "log.h"
@@ -96,6 +97,9 @@ int transmitter() {
     return -1;
   }
 
+  if (EFFICIENCY_TEST) srand(time(NULL));
+  if (EFFICIENCY_TEST) start_time();
+
   struct stat file_info;
   fstat(fd, &file_info);
   al.filesize = file_info.st_size;
@@ -134,6 +138,8 @@ int transmitter() {
   if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
+  if (EFFICIENCY_TEST) log_efficiency(al.filesize);
+
   return 0;
 }
 
@@ -185,6 +191,9 @@ int receiver() {
     else if (packet[0] == PACK_DATA && transmitting_data) {
       if (sequence_number%256 == packet[1]) {
         sequence_number++;
+      }
+      else if ((sequence_number-1)%256 == packet[1]) {
+        continue;
       }
       else {
         log_err("Sequence of packets received is wrong");

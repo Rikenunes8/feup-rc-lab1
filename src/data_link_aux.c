@@ -127,7 +127,7 @@ int byte_destuffing(uchar* frame, int length) {
 } 
 
 
-int open_non_canonical(char* file, struct termios *oldtio, int baudrate, int vtime, int vmin) {
+int open_non_canonical(char* file, struct termios *oldtio, int vtime, int vmin) {
   struct termios newtio;
 
   int fd = open(file, O_RDWR | O_NOCTTY );
@@ -143,7 +143,7 @@ int open_non_canonical(char* file, struct termios *oldtio, int baudrate, int vti
 
   
   bzero(&newtio, sizeof(newtio));
-  newtio.c_cflag = baudrate | CS8 | CLOCAL | CREAD;
+  newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
   newtio.c_oflag = 0;
 
@@ -181,3 +181,18 @@ int close_non_canonical(int fd, struct termios* oldtio) {
   return 0;
 }
 
+
+int setBaudrate() {
+  switch (BAUDRATE) {
+    case B38400:
+      return 38400;
+    case B19200:
+      return 19200;
+    case B9600:
+      return 9600;
+    case B4800:
+      return 4800;
+    default:
+      return 1;
+  }
+}

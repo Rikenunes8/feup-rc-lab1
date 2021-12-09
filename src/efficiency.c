@@ -7,13 +7,9 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
+#include <fcntl.h>
 
 static struct timespec test_time; // EFFICIENCY TEST
-
-// static clock_t test_time;
-
-//static struct timeval test_time;
-
 
 // ----------------- EFFICIENCY TEST -----------------------
 
@@ -28,26 +24,39 @@ uchar generate_error_BCC(uchar byte, int bcc) {
 
 void start_time() {
   clock_gettime(CLOCK_MONOTONIC, &test_time);
-  
-  // test_time = clock();
-  
-  //gettimeofday(&test_time, NULL);
 }
 
 double elapsed_time_ms() {
   struct timespec current_time;
   clock_gettime(CLOCK_MONOTONIC, &current_time);
   double elapsed = (current_time.tv_sec-test_time.tv_sec)*1000 + ((current_time.tv_nsec-test_time.tv_nsec)/10e6);
-  
-  //test_time = clock() - test_time;
-  //double clocks_per_ms = CLOCKS_PER_SEC*0.001;
-  //double elapsed = (double)test_time/clocks_per_ms;
-  
-  //struct timeval end;
-  //gettimeofday(&end, NULL);
-  //double elapsed = (end.tv_sec-test_time.tv_sec)*10e3 + (end.tv_usec-test_time.tv_usec)*10e-3;
 
   return elapsed;
 }
 
+void log_efficiency(int frame_size) {
+  double ms = elapsed_time_ms(); 
+  log_time_ms(ms); 
+  log_datarate(frame_size, ms);
+}
+
 // ---------------------------------------------------------
+
+// --------- LOG EFFICIENCY TEST -----------
+
+void log_bcc_error(int bcc) {
+  char text[30];
+  sprintf(text, "Generate BCC_%d error", bcc);
+  log_msg(text);
+}
+
+void log_time_ms(double time_ms) {
+  fprintf(stderr, "TIME -  %f ms\n", time_ms);
+}
+
+void log_datarate(double nbytes, double time_ms) {
+  double bits = (nbytes) / (time_ms/1000);
+  fprintf(stderr, "R    -  %0.1f bits/s \n", bits);
+}
+
+// -----------------------------------

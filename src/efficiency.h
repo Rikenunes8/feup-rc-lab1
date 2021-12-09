@@ -5,8 +5,8 @@
 
 // Eficiency tests
 #define EFFICIENCY_TEST 1
-#define FER       0
-#define T_PROP    0
+#define FER       0  // %
+#define T_PROP    0 // ms
 
 
 // ----------------- EFFICIENCY TEST -----------------------
@@ -24,4 +24,22 @@ void start_time();
 
 double elapsed_time_ms();
 
+void log_efficiency(int frame_size);
+
+
 // ---------------------------------------------------------
+
+// --------- LOG EFFICIENCY TEST -----------
+
+/**
+ * @brief Print a message to report a bcc error manually generated
+ * 
+ * @param bcc 1 to BCC_1 or 2 to BCC_2
+ */
+void log_bcc_error(int bcc);
+
+void log_time_ms(double time_ms);
+
+void log_datarate(double nbytes, double time_ms);
+
+// -----------------------------------
