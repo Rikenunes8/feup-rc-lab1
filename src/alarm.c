@@ -13,8 +13,11 @@ void alarm_handler() {
 }
 
 int set_alarm() {
-  // signal(SIGALRM, alarm_handler);  // Could be used to replace the following commands and by setting VTIME of non-canonical openning of serial port as not 0
-                                      // However the use of sigaction is used instead of singal since it interrupts the read system call when a alarm is called, consuming less of the processor
+  /*
+  signal(SIGALRM, alarm_handler);  
+  // Could be used to replace the following commands and by setting VTIME of non-canonical openning of serial port as not 0
+  // However the use of sigaction is used instead of singal since it interrupts the read system call when a alarm is called, consuming less processor
+  */
 
   struct sigaction sa;
   sigset_t smask;

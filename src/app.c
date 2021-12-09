@@ -66,7 +66,7 @@ int parse_args(char* port, int argc, char** argv) {
   return 0;
 }
 
-int buildControlPacket(uchar* packet, uchar type) {
+int build_control_packet(uchar* packet, uchar type) {
   uchar offsize = (uchar)sizeof(off_t);
   packet[0] = type;
   packet[1] = FILE_SIZE;
@@ -80,7 +80,7 @@ int buildControlPacket(uchar* packet, uchar type) {
   return 5 + offsize + filename_len;
 }
 
-int buildDataPacket(uchar* packet, uchar n, uchar* data, int data_size) {
+int build_data_packet(uchar* packet, uchar n, uchar* data, int data_size) {
   packet[0] = PACK_DATA;
   packet[1] = n % 256;
   packet[2] = data_size / 256;
@@ -97,8 +97,6 @@ int transmitter() {
     return -1;
   }
 
-  if (EFFICIENCY_TEST) srand(time(NULL));
-  if (EFFICIENCY_TEST) start_time();
 
   struct stat file_info;
   fstat(fd, &file_info);
@@ -107,10 +105,13 @@ int transmitter() {
   int size;
   uchar packet[MAX_SIZE];
 
-  size = buildControlPacket(packet, PACK_START);
+  size = build_control_packet(packet, PACK_START);
   if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
+  
+  if (EFFICIENCY_TEST) srand(time(NULL));
+  if (EFFICIENCY_TEST) start_time();
 
   uchar sequence_number = 0;
   uchar data[MAX_DATA_SIZE];
@@ -118,7 +119,7 @@ int transmitter() {
   off_t all_data_read = 0;
   do {
     data_size = read(fd, data, MAX_DATA_SIZE);
-    size = buildDataPacket(packet, sequence_number, data, data_size);
+    size = build_data_packet(packet, sequence_number, data, data_size);
 
     if (llwrite(al.fd, packet, size) < 0) {
       break;
@@ -133,12 +134,13 @@ int transmitter() {
   if (close(fd) < 0) {
     log_err("Fail closing file was transmitted");
   }
+
+  if (EFFICIENCY_TEST) efficiency(al.filesize);
   
-  size = buildControlPacket(packet, PACK_END);
+  size = build_control_packet(packet, PACK_END);
   if (llwrite(al.fd, packet, size) < 0) {
     return -1;
   }
-  if (EFFICIENCY_TEST) log_efficiency(al.filesize);
 
   return 0;
 }

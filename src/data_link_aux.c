@@ -182,7 +182,7 @@ int close_non_canonical(int fd, struct termios* oldtio) {
 }
 
 
-int setBaudrate() {
+int set_baudrate() {
   switch (BAUDRATE) {
     case B38400:
       return 38400;

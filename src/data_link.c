@@ -84,10 +84,12 @@ int ll_open_receiver(int fd) {
 
 int llopen(char* port, int status) {
   strcpy(ll.port, port);
-  ll.baudrate = setBaudrate();
+  ll.baudrate = set_baudrate();
   ll.sequence_number = 0x00;
   ll.timeout = TIME_OUT;
   ll.n_transmissions = MAX_RESENDS;
+
+  if (EFFICIENCY_TEST) init_stats(ll.baudrate, MAX_SIZE);
 
   if (set_alarm() < 0) {
     log_err("Setting alarm");

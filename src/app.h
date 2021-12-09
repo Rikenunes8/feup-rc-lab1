@@ -27,7 +27,7 @@ int parse_args(char* port, int argc, char** argv);
  * @param type START/END (0x02/0x03) byte, meaning the start or the end of data transmisson, respectivelly
  * @return int Size of the packet
  */
-int buildControlPacket(uchar* packet, uchar type);
+int build_control_packet(uchar* packet, uchar type);
 
 /**
  * @brief Create a data packet
@@ -38,7 +38,7 @@ int buildControlPacket(uchar* packet, uchar type);
  * @param data_size Size of the data
  * @return int Size of the packet
  */
-int buildDataPacket(uchar* packet, uchar n, uchar* data, int data_size);
+int build_data_packet(uchar* packet, uchar n, uchar* data, int data_size);
 
 /**
  * @brief Read the file to be transmitted and send its content. Open the file to be transmitted, send a start control packet followed by several data packets until all the file be read and then send an end control packet

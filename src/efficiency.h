@@ -6,10 +6,11 @@
 // Eficiency tests
 #define EFFICIENCY_TEST 1
 #define FER       0  // %
-#define T_PROP    0 // ms
-
+#define T_PROP    5000 // us
 
 // ----------------- EFFICIENCY TEST -----------------------
+
+void init_stats(int baudrate, int max_size);
 
 /**
  * @brief Produce a random uchar with a probability of FER defined in macros_dl.h
@@ -24,10 +25,8 @@ void start_time();
 
 double elapsed_time_ms();
 
-void log_efficiency(int frame_size);
+void efficiency(int frame_size);
 
-
-// ---------------------------------------------------------
 
 // --------- LOG EFFICIENCY TEST -----------
 
@@ -38,8 +37,5 @@ void log_efficiency(int frame_size);
  */
 void log_bcc_error(int bcc);
 
-void log_time_ms(double time_ms);
+void log_stats();
 
-void log_datarate(double nbytes, double time_ms);
-
-// -----------------------------------

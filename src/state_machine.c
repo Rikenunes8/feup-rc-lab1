@@ -41,7 +41,7 @@ void event_handler_sm(State_machine* sm, uchar byte, uchar* frame, int frame_typ
       process_a_rcv(sm, byte, &i, frame);
       break;
     case C_RCV:
-      process_c_rcv(sm, byte, &i, frame);
+      process_c_rcv(sm, byte, &i, frame, frame_type);
       break;
     case BCC_OK:
       process_bcc_ok(sm, byte, &i, frame, frame_type);
@@ -90,8 +90,8 @@ void process_a_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
   }
 }
 
-void process_c_rcv(State_machine* sm, uchar byte, int* i, uchar* frame) {
-  if (EFFICIENCY_TEST) byte = generate_error_BCC(byte, 1);
+void process_c_rcv(State_machine* sm, uchar byte, int* i, uchar* frame, int frame_type) {
+  if (EFFICIENCY_TEST) if (frame_type == INFORMATION) byte = generate_error_BCC(byte, 1);
   
   if (byte == FLAG) {
     sm->state = FLAG_RCV;
