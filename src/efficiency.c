@@ -28,6 +28,7 @@ static stats_t stats;
 // ----------------- EFFICIENCY TEST -----------------------
 
 void init_stats(int baudrate, int max_size) {
+  srand(time(NULL));
   stats.fer = FER;
   stats.bcc1_err = 3.0 / (double)(max_size+6) * FER; // Approximate probability of an error in bcc_1 given FER
   stats.bcc2_err = (double)max_size / (double)(max_size+6) * FER; // Approximate probability of an error in bcc_2 given FER
@@ -37,7 +38,7 @@ void init_stats(int baudrate, int max_size) {
 }
 
 uchar generate_error_BCC(uchar byte, int bcc) {
-  double prob = ((rand()%(10000)) + 1)/100.0;
+  double prob = (rand()%10001)/100.0;
   if ((bcc == 1 && prob <= stats.bcc1_err) || (bcc == 2 && prob <= stats.bcc2_err)) {
     log_bcc_error(bcc);
     byte = byte ^ 0x01;
@@ -57,9 +58,9 @@ double elapsed_time_ms() {
   return elapsed;
 }
 
-void efficiency(int frame_size) {
+void efficiency(int size) {
   double time_ms = elapsed_time_ms();
-  stats.datarate = (frame_size)*8 / (time_ms/1000);
+  stats.datarate = (size)*8 / (time_ms/1000);
   stats.s = stats.datarate / (double)stats.baudrate;
   log_stats();
 }

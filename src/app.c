@@ -110,7 +110,6 @@ int transmitter() {
     return -1;
   }
   
-  if (EFFICIENCY_TEST) srand(time(NULL));
   if (EFFICIENCY_TEST) start_time();
 
   uchar sequence_number = 0;
