@@ -7,7 +7,7 @@ For more information you can see the lab1 project's [report](https://github.com/
 
 ## Contributors
 
-| Name                     | Number    | E-Mail          | Contribution |
-| ------------------------ | --------- | --------------- | ------------ |
-| Henrique Nunes           | 201906852 | 201906852@up.pt | 70%          |
-| José Frederico Rodrigues | 201807626 | 201807626@up.pt | 30%          |
+| Name                     | Number    | E-Mail            | Contribution |
+| ------------------------ | --------- | ----------------- | ------------ |
+| Henrique Nunes           | 201906852 | up201906852@up.pt | 70%          |
+| José Frederico Rodrigues | 201807626 | up201807626@up.pt | 30%          |
